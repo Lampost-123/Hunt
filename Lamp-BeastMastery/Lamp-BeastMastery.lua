@@ -73,6 +73,18 @@ local function MyRoutine()
 		FightRemains = 11111
 	end, "PLAYER_REGEN_ENABLED")
 
+	do
+		local DeathblowBuff = Spell.Hunter.Commons.DeathblowBuff
+		HL:RegisterForSelfCombatEvent(
+			function(_, _, _, _, _, _, _, DestGUID, _, _, _, SpellID)
+				if DestGUID == Player:GUID() and SpellID == DeathblowBuff:ID() then
+					MainAddon.LastPulse = 0
+				end
+			end,
+			"SPELL_AURA_APPLIED", "SPELL_AURA_REFRESH", "SPELL_AURA_REMOVED"
+		)
+	end
+
 	local function Precombat()
 		-- no pre-pull actions here
 	end
@@ -159,37 +171,40 @@ local function MyRoutine()
 	end
 
 	local function DRST()
-		-- Withering Fire tick gating
-		local WFTTR = 999
-		if Player:BuffUp(S.WitheringFireBuff) then
-			WFTTR = 4 - S.BlackArrow:TimeSinceLastCast()
+		if IsNearCotWTick() then
+			if S.BestialWrath:IsReady() then
+				if Cast(S.BestialWrath) then return "bestial_wrath dr_st near_cotw_tick" end
+			end
+			return
 		end
-		-- Black Arrow first
+		if S.Bloodshed:IsCastable() and ((S.CalloftheWild:IsAvailable() and (S.CalloftheWild:IsReady() or S.CalloftheWild:CooldownRemains() < 3)) or not S.CalloftheWild:IsAvailable()) then
+			if Cast(S.Bloodshed) then return "bloodshed dr_st highprio_cotw_ready" end
+		end
+		if Player:BuffUp(S.DeathblowBuff) or S.BlackArrow:IsReady() then
+			if Cast(S.BlackArrow) then return "black_arrow dr_st deathblow" end
+			return
+		end
 		if S.BlackArrow:IsReady() then
 			if Cast(S.BlackArrow) then return "black_arrow dr_st 2" end
 		end
-		-- Bestial Wrath on CD, hold up to 30s to sync with Call of the Wild (or if TTD short)
-		if S.BestialWrath:IsCastable() and (S.CalloftheWild:CooldownRemains() > 30 or not S.CalloftheWild:IsAvailable() or Target:TimeToDie() < S.CalloftheWild:CooldownRemains()) then
-			if Cast(S.BestialWrath) then return "bestial_wrath dr_st 4" end
-		end
-		-- Bloodshed only if CotW ready with CDs or CotW active
-		if S.Bloodshed:IsCastable() and ((CDsEnabled() and S.CalloftheWild:IsCastable()) or Player:BuffUp(S.CalloftheWildBuff)) then
+		if S.Bloodshed:IsCastable() and ((S.CalloftheWild:IsAvailable() and (S.CalloftheWild:IsReady() or S.CalloftheWild:CooldownRemains() < 3)) or not S.CalloftheWild:IsAvailable()) then
 			if Cast(S.Bloodshed) then return "bloodshed dr_st 6" end
 		end
-		-- Call of the Wild whenever possible
+		if S.BestialWrath:IsReady() and Player:BuffUp(S.CalloftheWildBuff) then
+			if Cast(S.BestialWrath) then return "bestial_wrath dr_st 4" end
+		end
 		if S.CalloftheWild:IsCastable() then
 			if Cast(S.CalloftheWild) then return "call_of_the_wild dr_st 8" end
 		end
-		-- Kill Command with Withering Fire gating
-		if S.KillCommand:IsReady() and ((WFTTR > Player:GCD() and S.BlackArrow:CooldownRemains() > 0.5) or Player:BuffDown(S.WitheringFireBuff)) then
+		if S.KillCommand:IsReady() and not IsNearCotWTick() then
 			if Cast(S.KillCommand) then return "kill_command dr_st 10" end
 		end
-		-- Barbed Shot with Withering Fire gating
-		if S.BarbedShot:IsCastable() and (((WFTTR > 0.5) and (S.BlackArrow:CooldownRemains() > 0.5)) or Player:BuffDown(S.WitheringFireBuff)) then
+		-- Barbed Shot on coolown (skip near ticks by above return path)
+		if S.BarbedShot:IsCastable() then
 			if Cast(S.BarbedShot) then return "barbed_shot dr_st 12" end
 		end
-		-- Cobra Shot filler only when Withering Fire is down and not during CotW
-		if S.CobraShot:IsReady() and Player:BuffDown(S.WitheringFireBuff) and Player:BuffDown(S.CalloftheWildBuff) then
+		-- Cobra Shot as filler, ut not during CotW
+		if S.CobraShot:IsReady() and Player:BuffDown(S.CalloftheWildBuff) then
 			if Cast(S.CobraShot) then return "cobra_shot dr_st 14" end
 		end
 	end
@@ -232,58 +247,41 @@ local function MyRoutine()
 	end
 
 	local function DRCleave()
-		-- Withering Fire tick gating
-		local WFTTR = 999
-		if Player:BuffUp(S.WitheringFireBuff) then
-			WFTTR = 4 - S.BlackArrow:TimeSinceLastCast()
+		if Player:BuffUp(S.DeathblowBuff) then
+			if Cast(S.BlackArrow) then return "black_arrow dr_cleave deathblow" end
+			return
 		end
-		-- BW under CotW buff
-		if S.BestialWrath:IsCastable() and Player:BuffUp(S.CalloftheWildBuff) then
-			if Cast(S.BestialWrath) then return "bestial_wrath dr_cleave 1" end
+		local nearTick = IsNearCotWTick()
+		if S.Bloodshed:IsCastable() and ((S.CalloftheWild:IsAvailable() and (S.CalloftheWild:IsReady() or S.CalloftheWild:CooldownRemains() < 3)) or not S.CalloftheWild:IsAvailable()) then
+			if Cast(S.Bloodshed) then return "bloodshed dr_cleave highprio_cotw_ready" end
 		end
-		-- Black Arrow whenever possible
-		if S.BlackArrow:IsReady() then
-			if Cast(S.BlackArrow) then return "kill_shot dr_cleave 2" end
+		if Player:BuffUp(S.DeathblowBuff) or S.BlackArrow:IsReady() then
+			if Cast(S.BlackArrow) then return "black_arrow dr_cleave deathblow" end
+			return
 		end
-		-- Bestial Wrath on cooldown, hold up to 26s to sync with CotW when CDs ON
-		if CDsEnabled() and S.BestialWrath:IsCastable() and (S.CalloftheWild:CooldownRemains() > 26 or not S.CalloftheWild:IsAvailable()) then
+		if S.BestialWrath:IsReady() and Player:BuffUp(S.CalloftheWildBuff) then
 			if Cast(S.BestialWrath) then return "bestial_wrath dr_cleave 4" end
 		end
-		-- Early Barbed Shot: full recharge < GCD or Thrill of the Hunt low
-		if S.BarbedShot:IsCastable() and (S.BarbedShot:FullRechargeTime() < Player:GCD() or Player:BuffRemains(S.ThrilloftheHuntBuff) < Player:GCD() * 1.5) then
-			if CastL42(S.BarbedShot, Enemies40y, "min", EvaluateTargetIfFilterBarbedShot, nil, not Target:IsSpellInRange(S.BarbedShot)) then return "barbed_shot dr_cleave 6" end
+		if S.Bloodshed:IsCastable() and ((S.CalloftheWild:IsAvailable() and (S.CalloftheWild:IsReady() or S.CalloftheWild:CooldownRemains() < 3)) or not S.CalloftheWild:IsAvailable()) then
+			if Cast(S.Bloodshed) then return "bloodshed dr_cleave 6" end
 		end
-		-- Bloodshed only if CotW ready with CDs or CotW active
-		if S.Bloodshed:IsCastable() and ((CDsEnabled() and S.CalloftheWild:IsCastable()) or Player:BuffUp(S.CalloftheWildBuff)) then
-			if Cast(S.Bloodshed) then return "bloodshed dr_cleave 8" end
+		if S.MultiShot:IsReady() and not nearTick and ((Pet:BuffDown(S.BeastCleavePetBuff) or Pet:BuffRemains(S.BeastCleavePetBuff) <= 0.4) and not S.BlackArrow:IsReady()) then
+			if Cast(S.MultiShot) then return "multishot dr_cleave 8" end
 		end
-		-- Maintain Beast Cleave; avoid if Black Arrow ready
-		if S.MultiShot:IsReady() and ((Pet:BuffDown(S.BeastCleavePetBuff) or Pet:BuffRemains(S.BeastCleavePetBuff) <= 0.4) and (not S.BloodyFrenzy:IsAvailable() or S.CalloftheWild:CooldownDown()) and not S.BlackArrow:IsReady()) then
-			if Cast(S.MultiShot) then return "multishot dr_cleave 10" end
-		end
-		-- Call of the Wild (when CDs ON)
 		if CDsEnabled() and S.CalloftheWild:IsCastable() then
-			if Cast(S.CalloftheWild) then return "call_of_the_wild dr_cleave 12" end
+			if Cast(S.CalloftheWild) then return "call_of_the_wild dr_cleave 10" end
 		end
-		-- Explosive Shot if Thundering Hooves
-		if S.ExplosiveShot:IsReady() and S.ThunderingHooves:IsAvailable() then
-			if Cast(S.ExplosiveShot) then return "explosive_shot dr_cleave 14" end
+		if S.KillCommand:IsReady() and not nearTick then
+			if Cast(S.KillCommand) then return "kill_command dr_cleave 12" end
 		end
-		-- Kill Command with Withering Fire gating
-		if S.KillCommand:IsReady() and ((WFTTR > Player:GCD() and S.BlackArrow:CooldownRemains() > 0.5) or Player:BuffDown(S.WitheringFireBuff)) then
-			if Cast(S.KillCommand) then return "kill_command dr_cleave 18" end
+		if S.BarbedShot:IsCastable() and not nearTick then
+			if CastL42(S.BarbedShot, Enemies40y, "min", EvaluateTargetIfFilterBarbedShot, nil, not Target:IsSpellInRange(S.BarbedShot)) then return "barbed_shot dr_cleave 14" end
 		end
-		-- Barbed Shot with Withering Fire gating
-		if S.BarbedShot:IsCastable() and (((WFTTR > 0.5) and (S.BlackArrow:CooldownRemains() > 0.5)) or Player:BuffDown(S.WitheringFireBuff)) then
+		if S.BarbedShot:IsCastable() and not nearTick then
 			if CastL42(S.BarbedShot, Enemies40y, "min", EvaluateTargetIfFilterBarbedShot, nil, not Target:IsSpellInRange(S.BarbedShot)) then return "barbed_shot dr_cleave 16" end
 		end
-		-- Cobra Shot filler, not during CotW, only when Withering Fire down
-		if S.CobraShot:IsReady() and Player:BuffDown(S.WitheringFireBuff) and (Player:FocusTimeToMax() < Player:GCD() * 2) and Player:BuffDown(S.CalloftheWildBuff) then
-			if Cast(S.CobraShot) then return "cobra_shot dr_cleave 20" end
-		end
-		-- Explosive Shot fallback
-		if S.ExplosiveShot:IsReady() then
-			if Cast(S.ExplosiveShot) then return "explosive_shot dr_cleave 22" end
+		if S.CobraShot:IsReady() and Player:BuffDown(S.CalloftheWildBuff) then
+			if Cast(S.CobraShot) then return "cobra_shot dr_cleave 18" end
 		end
 	end
 
