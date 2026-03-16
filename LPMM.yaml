@@ -5,7 +5,7 @@ movement_allowed: true
 
 spell_overrides:
   aimed_shot: "(!player.moving|buff.lock_and_load.up)&!player.casting.19434&!player.channeling&!prev_gcd.1.aimed_shot&(lastcast.aimed_shot>1.5|lastcast.arcane_shot<lastcast.aimed_shot|lastcast.multishot<lastcast.aimed_shot)"
-  rapid_fire: "!player.casting.19434"
+  rapid_fire: "!player.casting.19434&(lastcast.aimed_shot>=1|lastcast.aimed_shot>=lastcast.arcane_shot|lastcast.aimed_shot>=lastcast.multishot)"
   steady_shot: "!player.casting.56641"
 
 config:
@@ -16,8 +16,12 @@ config:
     max: 8
     value: 3
 
+  smart_defensives:
+    section: "Defensives"
+    type: checkbox
+    value: true
   auto_defense:
-    section: "Auto Defensives"
+    section: "Defensives"
     type: checkbox
     value: true
 
@@ -32,28 +36,23 @@ variables:
   cd_used: prev_gcd.1.volley|prev_gcd.1.trueshot|(lastcast.volley<lastcast.aimed_shot&lastcast.volley<lastcast.rapid_fire)|(lastcast.trueshot<lastcast.aimed_shot&lastcast.trueshot<lastcast.rapid_fire)
 
 lists:
-  pre_checks:
-    - return,if=player.dead
-    - return,if=mounted
-    - return,if=!state.rotation
-    - return,if=state.blocked_inputs
-
   main:
-    - call_action_list,name=spell_queue
-    - call_action_list,name=pre_checks
+    - call_action_list,name=spell_queue       
+    - call_action_list,name=sanity_checks     
+    - call_action_list,name=auto_target_ranged
+    - call_action_list,name=defensives,if=config.smart_defensives
+    - call_action_list,name=lp_defensives,if=config.auto_defense
     # Target Check
     - return,if=!target.valid&!((config.auto_combat.has(1)&target.quest_mob&target.enemy&!target.dead)|(config.auto_combat.has(2)&target.combat&target.enemy&!target.dead)|(config.auto_combat.has(3)&target.targeting_party&target.enemy&!target.dead))
     - return,if=!target.valid&config.auto_combat.has(0)
     - return,if=!target.valid|target.dead|!target.attackable
-    - call_action_list,name=auto_target
-    - call_action_list,name=defensives,if=config.auto_defense
     - call_action_list,name=interrupts
     - call_action_list,name=cooldowns,if=!player.casting&!player.channeling
     - call_action_list,name=trinkets,if=!player.casting&!player.channeling
     - call_action_list,name=sentinel_aoe,if=!player.casting&!player.channeling&var.use_aoe
     - call_action_list,name=sentinel_st,if=!player.casting&!player.channeling&!var.use_aoe
 
-  defensives:
+  lp_defensives:
     - survival_of_the_fittest.player,range_check=none,if=player.health.pct<65
     - exhilaration.player,range_check=none,if=player.health.pct<50&!buff.survival_of_the_fittest.up
     - aspect_of_the_turtle.player,range_check=none,if=player.health.pct<20&!buff.survival_of_the_fittest.up
@@ -72,13 +71,13 @@ lists:
 
   sentinel_aoe:
     - multishot,if=!talent.aspect_of_the_hydra&(var.precise_shots_expected|buff.trick_shots.down)
-    - arcane_shot,if=talent.aspect_of_the_hydra&var.precise_shots_expected|player.casting.19434
-    - rapid_fire,if=!var.precise_shots_expected&buff.bulletstorm.down
+    - arcane_shot,interrupt=true,ignore_queue=true,if=talent.aspect_of_the_hydra&var.precise_shots_expected|player.casting.19434
+    - rapid_fire,if=!var.precise_shots_expected&buff.precise_shots.down&(lastcast.aimed_shot>=1.5|lastcast.aimed_shot>=lastcast.arcane_shot)&buff.bulletstorm.down
     - trueshot,if=state.cds&!var.cd_used&!buff.double_tap.up
     - one_button_assist,if=state.cds&!var.cd_used&!buff.precise_shots.up&!buff.double_tap.up&cooldown.aimed_shot.charges_fractional>=1&one_button_assistant.volley
     #- moonlight_chakram,ignore_cooldown=true,if=buff.trueshot.up&(focus<35)
     - aimed_shot,if=!var.precise_shots_expected
-    - rapid_fire,if=!var.precise_shots_expected
+    - rapid_fire,if=!var.precise_shots_expected&buff.precise_shots.down&(lastcast.aimed_shot>=1.5|lastcast.aimed_shot>=lastcast.arcane_shot)
     - steady_shot,if=!player.moving
     - steady_shot,ignore_movement=true,if=player.moving.time>0.6
 
@@ -86,12 +85,12 @@ lists:
     - one_button_assist,if=state.cds&!var.cd_used&!buff.precise_shots.up&!buff.double_tap.up&cooldown.aimed_shot.charges_fractional>=1&one_button_assistant.volley
     - trueshot,if=state.cds&!var.cd_used&!buff.double_tap.up
     #- moonlight_chakram,ignore_cooldown=true,if=buff.trueshot.up&(focus<35)
-    - arcane_shot,if=var.precise_shots_expected|player.casting.19434
-    - rapid_fire,if=!var.precise_shots_expected&talent.unload&((talent.no_scope&buff.bulletstorm.stack<10)|target.health.pct<20)
-    - rapid_fire,if=!var.precise_shots_expected&buff.bulletstorm.remains<2.5
+    - arcane_shot,interrupt=true,ignore_queue=true,if=var.precise_shots_expected|player.casting.19434
+    - rapid_fire,if=!var.precise_shots_expected&buff.precise_shots.down&(lastcast.aimed_shot>=1.5|lastcast.aimed_shot>=lastcast.arcane_shot)&talent.unload&((talent.no_scope&buff.bulletstorm.stack<10))
+    - rapid_fire,if=!var.precise_shots_expected&buff.precise_shots.down&(lastcast.aimed_shot>=1.5|lastcast.aimed_shot>=lastcast.arcane_shot)&buff.bulletstorm.remains<2.5
     - trueshot,ignore_cooldown=true,if=buff.trueshot.up&(cooldown.aimed_shot.charges_fractional<1.2|focus<35)
     - aimed_shot,if=!var.precise_shots_expected
-    - rapid_fire,if=!var.precise_shots_expected
+    - rapid_fire,if=!var.precise_shots_expected&buff.precise_shots.down&(lastcast.aimed_shot>=1.5|lastcast.aimed_shot>=lastcast.arcane_shot)
     - steady_shot,if=!player.moving
     - steady_shot,ignore_movement=true,if=player.moving.time>0.6
 
