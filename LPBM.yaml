@@ -1,5 +1,5 @@
 spec: 253
-name: "LP - Beast Mastery Hunter"
+name: "LP - BM (Packleader)"
 
 movement_allowed: true
 
@@ -63,8 +63,9 @@ variables:
   frenzy_stacks: buff.frenzy.stack
 lists:
   main:
-    - return,if=player.dead|state.blocked_inputs
     - call_action_list,name=spell_queue
+    - call_action_list,name=sanity_checks
+    - return,if=player.dead|!state.rotation|state.blocked_inputs
     # Always handle pet management, even out of combat
    
 
