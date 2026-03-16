@@ -6,6 +6,7 @@ movement_allowed: true
 spell_overrides:
   aimed_shot: "(!player.moving|buff.lock_and_load.up)&!player.casting.19434&!player.channeling&!prev_gcd.1.aimed_shot&(lastcast.aimed_shot>1.5|lastcast.arcane_shot<lastcast.aimed_shot|lastcast.multishot<lastcast.aimed_shot)"
   rapid_fire: "!player.casting.19434"
+  steady_shot: "!player.casting.56641"
 
 config:
   cleave_threshold:
@@ -31,9 +32,19 @@ variables:
   cd_used: prev_gcd.1.volley|prev_gcd.1.trueshot|(lastcast.volley<lastcast.aimed_shot&lastcast.volley<lastcast.rapid_fire)|(lastcast.trueshot<lastcast.aimed_shot&lastcast.trueshot<lastcast.rapid_fire)
 
 lists:
+  pre_checks:
+    - return,if=player.dead
+    - return,if=mounted
+    - return,if=!state.rotation
+    - return,if=state.blocked_inputs
+
   main:
     - call_action_list,name=spell_queue
-    - call_action_list,name=sanity_checks
+    - call_action_list,name=pre_checks
+    # Target Check
+    - return,if=!target.valid&!((config.auto_combat.has(1)&target.quest_mob&target.enemy&!target.dead)|(config.auto_combat.has(2)&target.combat&target.enemy&!target.dead)|(config.auto_combat.has(3)&target.targeting_party&target.enemy&!target.dead))
+    - return,if=!target.valid&config.auto_combat.has(0)
+    - return,if=!target.valid|target.dead|!target.attackable
     - call_action_list,name=auto_target
     - call_action_list,name=defensives,if=config.auto_defense
     - call_action_list,name=interrupts
@@ -56,8 +67,8 @@ lists:
     - #combat_potion,if=buff.trueshot.up&(buff.bloodlust.up|(fight_remains<90))
 
   trinkets:
-    - trinket_1,if=state.cds&trinket_1.ready&(buff.trueshot.up|(cooldown.trueshot.remains<2)|(cooldown.trueshot.remains>45))
-    - trinket_2,if=state.cds&trinket_2.ready&(buff.trueshot.up|(cooldown.trueshot.remains<2)|(cooldown.trueshot.remains>45))
+    - trinket_1,if=state.cds&trinket_1.ready&buff.trueshot.up
+    - trinket_2,if=state.cds&trinket_2.ready&buff.trueshot.up
 
   sentinel_aoe:
     - multishot,if=!talent.aspect_of_the_hydra&(var.precise_shots_expected|buff.trick_shots.down)
@@ -69,7 +80,7 @@ lists:
     - aimed_shot,if=!var.precise_shots_expected
     - rapid_fire,if=!var.precise_shots_expected
     - steady_shot,if=!player.moving
-    - steady_shot,ignore_movement=true,if=player.moving.time>0.3
+    - steady_shot,ignore_movement=true,if=player.moving.time>0.6
 
   sentinel_st:
     - one_button_assist,if=state.cds&!var.cd_used&!buff.precise_shots.up&!buff.double_tap.up&cooldown.aimed_shot.charges_fractional>=1&one_button_assistant.volley
@@ -82,7 +93,7 @@ lists:
     - aimed_shot,if=!var.precise_shots_expected
     - rapid_fire,if=!var.precise_shots_expected
     - steady_shot,if=!player.moving
-    - steady_shot,ignore_movement=true,if=player.moving.time>0.3
+    - steady_shot,ignore_movement=true,if=player.moving.time>0.6
 
   interrupts:
     - counter_shot,if=target.casting.interruptible
