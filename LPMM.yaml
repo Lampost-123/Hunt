@@ -75,8 +75,8 @@ lists:
     - one_button_assist,if=state.cds&!var.cd_used&!buff.precise_shots.up&!buff.double_tap.up&cooldown.aimed_shot.charges_fractional>=1&one_button_assistant.volley
     - trueshot,if=state.cds&!var.cd_used&!buff.double_tap.up
     #- moonlight_chakram,ignore_cooldown=true,if=buff.trueshot.up&(focus<35)
-    - rapid_fire,if=!var.precise_shots_expected&talent.unload&((talent.no_scope&buff.bulletstorm.stack<10)|target.health.pct<20)
     - arcane_shot,if=var.precise_shots_expected|player.casting.19434
+    - rapid_fire,if=!var.precise_shots_expected&talent.unload&((talent.no_scope&buff.bulletstorm.stack<10)|target.health.pct<20)
     - rapid_fire,if=!var.precise_shots_expected&buff.bulletstorm.remains<2.5
     - trueshot,ignore_cooldown=true,if=buff.trueshot.up&(cooldown.aimed_shot.charges_fractional<1.2|focus<35)
     - aimed_shot,if=!var.precise_shots_expected
