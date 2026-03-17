@@ -74,7 +74,7 @@ lists:
     - arcane_shot,interrupt=true,ignore_queue=true,if=talent.aspect_of_the_hydra&var.precise_shots_expected|player.casting.19434
     - rapid_fire,if=!var.precise_shots_expected&buff.precise_shots.down&(lastcast.aimed_shot>=1.5|lastcast.aimed_shot>=lastcast.arcane_shot)&buff.bulletstorm.down
     - trueshot,if=state.cds&!var.cd_used&!buff.double_tap.up
-    - one_button_assist,if=state.cds&!var.cd_used&!buff.precise_shots.up&!buff.double_tap.up&cooldown.aimed_shot.charges_fractional>=1&one_button_assistant.volley
+    - one_button_assist_lookup,if=state.cds&!var.cd_used&!buff.precise_shots.up&!buff.double_tap.up&cooldown.aimed_shot.charges_fractional>=1&one_button_assistant.volley
     #- moonlight_chakram,ignore_cooldown=true,if=buff.trueshot.up&(focus<35)
     - aimed_shot,if=!var.precise_shots_expected
     - rapid_fire,if=!var.precise_shots_expected&buff.precise_shots.down&(lastcast.aimed_shot>=1.5|lastcast.aimed_shot>=lastcast.arcane_shot)
@@ -82,7 +82,7 @@ lists:
     - steady_shot,ignore_movement=true,if=player.moving.time>0.6
 
   sentinel_st:
-    - one_button_assist,if=state.cds&!var.cd_used&!buff.precise_shots.up&!buff.double_tap.up&cooldown.aimed_shot.charges_fractional>=1&one_button_assistant.volley
+    - one_button_assist_lookup,if=state.cds&!var.cd_used&!buff.precise_shots.up&!buff.double_tap.up&cooldown.aimed_shot.charges_fractional>=1&one_button_assistant.volley
     - trueshot,if=state.cds&!var.cd_used&!buff.double_tap.up
     #- moonlight_chakram,ignore_cooldown=true,if=buff.trueshot.up&(focus<35)
     - arcane_shot,interrupt=true,ignore_queue=true,if=var.precise_shots_expected|player.casting.19434
