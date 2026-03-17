@@ -42,7 +42,6 @@ lists:
     - call_action_list,name=auto_target_ranged
     - call_action_list,name=defensives,if=config.smart_defensives
     - call_action_list,name=lp_defensives,if=config.auto_defense
-    # Target Check
     - return,if=!target.valid&!((config.auto_combat.has(1)&target.quest_mob&target.enemy&!target.dead)|(config.auto_combat.has(2)&target.combat&target.enemy&!target.dead)|(config.auto_combat.has(3)&target.targeting_party&target.enemy&!target.dead))
     - return,if=!target.valid&config.auto_combat.has(0)
     - return,if=!target.valid|target.dead|!target.attackable
