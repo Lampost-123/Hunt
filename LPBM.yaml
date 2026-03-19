@@ -1,7 +1,7 @@
 version: "1.0.0"
 spec: 253
 name: "LP - BM (Pack Leader / Dark Ranger)"
-description: "BM Hunter with Pack Leader  Dark Ranger support (BMROTA)"
+description: "BM Hunter PackLeader/Dark Ranger"
 author: "LP"
 entry: main
 
