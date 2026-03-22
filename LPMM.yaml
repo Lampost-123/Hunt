@@ -1,5 +1,5 @@
 spec: 254
-name: "LP - Marksmanship Hunter (Sentinel)"
+name: "LP - Marksmanship Hunter 1.1 (Sentinel)"
 
 movement_allowed: true
 
@@ -74,6 +74,7 @@ lists:
     - one_button_assist_lookup,if=state.cds&!buff.double_tap.up&!prev_gcd.1.trueshot&one_button_assistant.volley&cooldown.aimed_shot.charges_fractional>=1
     - trueshot,if=state.cds&!prev_gcd.1.volley&!var.cd_used&!buff.double_tap.up&var.trueshot_bulletstorm_ok&cooldown.aimed_shot.charges_fractional>=1
     - arcane_shot,interrupt=true,ignore_queue=true,if=var.precise_shots_expected|player.casting.19434
+    - moonlight_chakram,override=trueshot,if=buff.moonlight_chakram.up&buff.trueshot.up&player.moving&talent.stalk_and_strike.enabled
     - rapid_fire,if=!var.precise_shots_expected&buff.precise_shots.down&(buff.bulletstorm.remains<2.5|buff.bulletstorm.down)
     - rapid_fire,if=talent.unload&(talent.no_scope&buff.bulletstorm.stack<10|target.health.pct<20)
     - aimed_shot,if=!var.precise_shots_expected
@@ -86,6 +87,7 @@ lists:
     - trueshot,if=state.cds&!prev_gcd.1.volley&!var.cd_used&!buff.double_tap.up&var.trueshot_ready&var.trueshot_bulletstorm_ok&cooldown.aimed_shot.charges_fractional>=1
     - multishot,if=!talent.aspect_of_the_hydra&(var.precise_shots_expected|buff.trick_shots.down)
     - arcane_shot,interrupt=true,ignore_queue=true,if=talent.aspect_of_the_hydra&var.precise_shots_expected|player.casting.19434
+    - moonlight_chakram,override=trueshot,if=buff.moonlight_chakram.up&buff.trueshot.up&player.moving&talent.stalk_and_strike.enabled
     - rapid_fire,if=!var.precise_shots_expected&buff.precise_shots.down&(buff.bulletstorm.remains<2.5|buff.bulletstorm.down)
     - one_button_assist_lookup,if=state.cds&!buff.double_tap.up&!prev_gcd.1.trueshot&one_button_assistant.volley&cooldown.aimed_shot.charges_fractional>=1
     - aimed_shot,if=!var.precise_shots_expected
