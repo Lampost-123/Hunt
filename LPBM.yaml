@@ -1,4 +1,4 @@
-version: "1.0.0"
+version: "1.5"
 spec: 253
 name: "LP - BM (Pack Leader / Dark Ranger)"
 description: "BM Hunter PackLeader/Dark Ranger"
@@ -31,13 +31,6 @@ config:
     type: checkbox
     default: true
 
-  bestial_wrath_ttd:
-    label: "Hold Bestial Wrath if TTD below (s)"
-    type: slider
-    min: 10
-    max: 60
-    default: 20
-
   pet_slot:
     label: "Preferred pet slot"
     type: dropdown
@@ -57,25 +50,15 @@ config:
 variables:
   is_packleader: "!talent.black_arrow.enabled"
   is_dark_ranger: talent.black_arrow.enabled
-
   use_aoe: pet.alive&pet.nearby_enemies>=2
-
   in_burst: buff.bestial_wrath.up
-
-  in_execute: target.health.pct<20
-
-  focus_capping: focus>=90
-  focus_high: focus>=80
-  focus_low: focus<30
-
-  frenzy_refresh: buff.frenzy.remains<4.8
-  frenzy_stacks: buff.frenzy.stack
 lists:
   main:
     - call_action_list,name=spell_queue
     - call_action_list,name=sanity_checks
     - call_action_list,name=auto_target
     - call_action_list,name=interrupts
+    - call_action_list,name=auto_heal
     - call_action_list,name=pet,if=!pet.alive
     - mend_pet,if=pet.alive&pet.health.pct<40&pet.buff.mend_pet.down
     - call_action_list,name=defensives,if=config.smart_defensives
@@ -85,10 +68,10 @@ lists:
     - return,if=!target.valid|target.dead|!target.attackable
     - hunters_mark,if=target.debuff.hunters_mark.down&target.exists
     - call_action_list,name=trinkets,if=!player.casting&!player.channeling
-    - call_action_list,name=dark_ranger_st,if=var.is_dark_ranger&(active_enemies<2|!talent.beast_cleave&active_enemies<3)
-    - call_action_list,name=dark_ranger_aoe,if=var.is_dark_ranger&(active_enemies>2|talent.beast_cleave&active_enemies>1)
-    - call_action_list,name=pack_leader_st,if=var.is_packleader&(active_enemies<2|!talent.beast_cleave&active_enemies<3)
-    - call_action_list,name=pack_leader_aoe,if=var.is_packleader&(active_enemies>2|talent.beast_cleave&active_enemies>1)
+    - call_action_list,name=dark_ranger_st,if=var.is_dark_ranger&(pet.nearby_enemies<2|!talent.beast_cleave&pet.nearby_enemies<3)|!state.aoe
+    - call_action_list,name=dark_ranger_aoe,if=var.is_dark_ranger&(pet.nearby_enemies>2|talent.beast_cleave&pet.nearby_enemies>1)
+    - call_action_list,name=pack_leader_st,if=var.is_packleader&(pet.nearby_enemies<2|!talent.beast_cleave&pet.nearby_enemies<3)|!state.aoe
+    - call_action_list,name=pack_leader_aoe,if=var.is_packleader&(pet.nearby_enemies>2|talent.beast_cleave&pet.nearby_enemies>1)
 
   defensives:
     - call_action_list,name=lp_defensives
@@ -120,7 +103,7 @@ lists:
     - intimidation,if=interrupts.target.stun.ready&pet.alive
 
   cooldowns:
-    - barbed_shot,if=state.cds&cooldown.bestial_wrath.ready&cooldown.barbed_shot.charges>=1&cooldown.barbed_shot.ready
+    - barbed_shot,if=state.cds&(cooldown.bestial_wrath.ready|cooldown.bestial_wrath.remains<=2)&cooldown.barbed_shot.charges>=1&cooldown.barbed_shot.ready
 
   pack_leader_st:
     - barbed_shot,if=state.cds&cooldown.bestial_wrath.remains<gcd
@@ -130,31 +113,35 @@ lists:
     - cobra_shot
 
   pack_leader_aoe:
-    - barbed_shot,if=state.cds&cooldown.bestial_wrath.remains<gcd
     - wild_thrash,if=usable.wild_thrash
     - bestial_wrath,if=state.cds
     - kill_command,if=pet.alive&usable.kill_command
-    - cobra_shot,if=cooldown.wild_thrash.remains>gcd&talent.hogstrider&buff.hogstrider.up&active_enemies<4
+    - cobra_shot,if=cooldown.wild_thrash.remains>gcd&talent.hogstrider&buff.hogstrider.up&pet.nearby_enemies<4
     - barbed_shot,if=cooldown.barbed_shot.ready
     - cobra_shot,if=cooldown.wild_thrash.remains>gcd
 
   dark_ranger_st:
-    - wailing_arrow,override=bestial_wrath,if=buff.withering_fire.remains<action.wailing_arrow.execute_time+gcd|fight_remains<action.wailing_arrow.execute_time+gcd
-    - bestial_wrath,if=state.cds
+    - barbed_shot,if=state.cds&cooldown.kill_command.charges_fractional<2&buff.bestial_wrath.down
+    - wailing_arrow,override=bestial_wrath,if=!player.moving&buff.withering_fire.remains<=action.wailing_arrow.execute_time+gcd
+    - bestial_wrath,if=state.cds&buff.bestial_wrath.down&pet.nearby_enemies>=1
     - kill_command,if=pet.alive&usable.kill_command&buff.natures_ally.up
     - black_arrow,if=buff.withering_fire.up
-    - barbed_shot,if=cooldown.barbed_shot.ready
+    - barbed_shot,if=cooldown.barbed_shot.charges>=1.7
+    - wailing_arrow,override=bestial_wrath,if=!player.moving&buff.withering_fire.up
     - black_arrow
+    - barbed_shot
     - cobra_shot
 
   dark_ranger_aoe:
-    - wailing_arrow,override=bestial_wrath,if=buff.bestial_wrath.remains<action.wailing_arrow.execute_time+gcd|fight_remains<action.wailing_arrow.execute_time+gcd
-    - black_arrow,if=buff.beast_cleave.remains<gcd
-    - bestial_wrath,if=state.cds&cooldown.bestial_wrath.ready
-    - wild_thrash,if=usable.wild_thrash
-    - kill_command,if=pet.alive&buff.natures_ally.up&usable.kill_command
-    - black_arrow,if=buff.withering_fire.up
-    - barbed_shot,if=cooldown.barbed_shot.ready
-    - wailing_arrow,override=bestial_wrath,if=buff.wailing_arrow.up
+    - barbed_shot,if=state.cds&cooldown.kill_command.charges_fractional<2&buff.bestial_wrath.down
+    - bestial_wrath,if=state.cds&buff.bestial_wrath.down&pet.nearby_enemies>=1
+    - wailing_arrow,override=bestial_wrath,if=!player.moving&buff.withering_fire.remains<=action.wailing_arrow.execute_time+gcd
+    - black_arrow,if=buff.bestial_wrath.up&buff.withering_fire.remains<gcd
+    - wild_thrash,if=usable.wild_thrash&pet.nearby_enemies>=1
+    - kill_command,if=pet.alive&buff.natures_ally.up
+    - black_arrow,if=buff.bestial_wrath.up
+    - barbed_shot,if=cooldown.barbed_shot.charges_fractional>=1.7
+    - wailing_arrow,override=bestial_wrath,if=!player.moving&buff.withering_fire.up
     - black_arrow
+    - barbed_shot
     - cobra_shot,if=cooldown.wild_thrash.remains>gcd
