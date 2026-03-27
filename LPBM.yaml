@@ -133,7 +133,7 @@ lists:
     - cobra_shot
 
   dark_ranger_aoe:
-    - barbed_shot,if=state.cds&cooldown.kill_command.charges_fractional<2&buff.bestial_wrath.down
+    #- barbed_shot,if=state.cds&cooldown.kill_command.charges_fractional<2&buff.bestial_wrath.down
     - bestial_wrath,if=state.cds&buff.bestial_wrath.down&pet.nearby_enemies>=1
     - wailing_arrow,override=bestial_wrath,if=!player.moving&buff.withering_fire.remains<=action.wailing_arrow.execute_time+gcd
     - black_arrow,if=buff.bestial_wrath.up&buff.withering_fire.remains<gcd
