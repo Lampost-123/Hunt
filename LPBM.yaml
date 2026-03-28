@@ -109,39 +109,38 @@ lists:
     - barbed_shot,if=state.cds&cooldown.bestial_wrath.remains<gcd
     - bestial_wrath,if=state.cds
     - kill_command,if=pet.alive&usable.kill_command&buff.natures_ally.up
-    - barbed_shot,if=cooldown.barbed_shot.ready
+    - barbed_shot
     - cobra_shot
 
   pack_leader_aoe:
-    - wild_thrash,if=usable.wild_thrash
-    - bestial_wrath,if=state.cds
-    - kill_command,if=pet.alive&usable.kill_command
-    - cobra_shot,if=cooldown.wild_thrash.remains>gcd&talent.hogstrider&buff.hogstrider.up&pet.nearby_enemies<4
-    - barbed_shot,if=cooldown.barbed_shot.ready
+    - barbed_shot,if=state.cds&cooldown.bestial_wrath.remains<gcd
+    - bestial_wrath,if=state.cds&(talent.beast_cleave&pet.buff.beast_cleave.up|!talent.beast_cleave)
+    - wild_thrash,if=usable.wild_thrash&pet.nearby_enemies>=2
+    - kill_command,if=pet.alive&usable.kill_command&buff.natures_ally.up
+    - barbed_shot
     - cobra_shot,if=cooldown.wild_thrash.remains>gcd
 
   dark_ranger_st:
-    - barbed_shot,if=state.cds&cooldown.kill_command.charges_fractional<2&buff.bestial_wrath.down
+    #- barbed_shot,if=state.cds&cooldown.kill_command.charges_fractional<2&buff.bestial_wrath.down
     - wailing_arrow,override=bestial_wrath,if=!player.moving&buff.withering_fire.remains<=action.wailing_arrow.execute_time+gcd
-    - bestial_wrath,if=state.cds&buff.bestial_wrath.down&pet.nearby_enemies>=1
+    - bestial_wrath,if=state.cds&buff.bestial_wrath.down&pet.nearby_enemies>=2
     - kill_command,if=pet.alive&usable.kill_command&buff.natures_ally.up
     - black_arrow,if=buff.withering_fire.up
     - barbed_shot,if=cooldown.barbed_shot.charges>=1.7
-    - wailing_arrow,override=bestial_wrath,if=!player.moving&buff.withering_fire.up
+    #- wailing_arrow,override=bestial_wrath,if=!player.moving&buff.withering_fire.up
     - black_arrow
     - barbed_shot
     - cobra_shot
 
   dark_ranger_aoe:
     #- barbed_shot,if=state.cds&cooldown.kill_command.charges_fractional<2&buff.bestial_wrath.down
-    - bestial_wrath,if=state.cds&buff.bestial_wrath.down&pet.nearby_enemies>=1
+    - bestial_wrath,if=state.cds&buff.bestial_wrath.down&pet.nearby_enemies>=1&(talent.beast_cleave&pet.buff.beast_cleave.up|!talent.beast_cleave)
     - wailing_arrow,override=bestial_wrath,if=!player.moving&buff.withering_fire.remains<=action.wailing_arrow.execute_time+gcd
     - black_arrow,if=buff.bestial_wrath.up&buff.withering_fire.remains<gcd
     - wild_thrash,if=usable.wild_thrash&pet.nearby_enemies>=1
     - kill_command,if=pet.alive&buff.natures_ally.up
-    - black_arrow,if=buff.bestial_wrath.up
-    - barbed_shot,if=cooldown.barbed_shot.charges_fractional>=1.7
-    - wailing_arrow,override=bestial_wrath,if=!player.moving&buff.withering_fire.up
-    - black_arrow
+    - black_arrow,if=buff.withering_fire.up
     - barbed_shot
+    #- wailing_arrow,override=bestial_wrath,if=!player.moving&buff.withering_fire.up
+    - black_arrow
     - cobra_shot,if=cooldown.wild_thrash.remains>gcd
