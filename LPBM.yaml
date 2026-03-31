@@ -39,13 +39,10 @@ config:
 variables:
   is_packleader: "!talent.black_arrow.enabled"
   is_dark_ranger: talent.black_arrow.enabled
-  # SimC: active_enemies<2|(!talent.beast_cleave&active_enemies<3)
   route_st: (pet.nearby_enemies<2)|(!talent.beast_cleave&pet.nearby_enemies<3)
-  # SimC: active_enemies>2|(talent.beast_cleave&active_enemies>1)
   route_cleave: (pet.nearby_enemies>2)|(talent.beast_cleave&pet.nearby_enemies>1)
-  # SimC KC pool before BW: remains>kc.full_recharge_time+gcd. If client maps remains to BW buff time, that fails mid-BW — always allow KC during BW.
   kc_pool_simc: buff.bestial_wrath.up|cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd
-  # CDs on: hold Thrash for BW unless BW is ready/in BW, BW CD > 6s, or BW CD <= 2s (snap Thrash before BW).
+  
   wt_bw_pool: "!state.cds&combat.time>1.5|buff.bestial_wrath.up|state.cds&cooldown.bestial_wrath.remains>6&!cooldown.bestial_wrath.ready|state.cds&cooldown.bestial_wrath.remains<=2&!cooldown.bestial_wrath.ready"
 
 lists:
@@ -99,14 +96,14 @@ lists:
     - intimidation,if=interrupts.target.ready&pet.alive&!cooldown.counter_shot.ready
     - intimidation,if=interrupts.target.stun.ready&pet.alive
 
-  # SimC actions.cds — racials/PI/potion are character-specific; wire items your client exposes.
+  
   cooldowns:
     - berserking,if=state.cds&(cooldown.bestial_wrath.ready|fight_remains<13)
     - blood_fury,if=state.cds&(cooldown.bestial_wrath.ready|fight_remains<16)
     - ancestral_call,if=state.cds&(cooldown.bestial_wrath.ready|fight_remains<16)
     - fireblood,if=state.cds&(cooldown.bestial_wrath.ready|fight_remains<9)
 
-  # actions.st — Pack Leader single target
+  
   pack_leader_st:
     #- barbed_shot,if=state.cdsh&cooldown.bestial_wrath.remains<gcd
     - bestial_wrath,if=state.cds
