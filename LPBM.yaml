@@ -111,7 +111,7 @@ lists:
     - barbed_shot
     - cobra_shot
 
-  # actions.cleave — Pack Leader cleave
+ 
   pack_leader_aoe:
     - barbed_shot,if=state.cds&cooldown.bestial_wrath.remains<gcd
     - bestial_wrath,if=state.cds&pet.nearby_enemies>1&(buff.beast_cleave.up|!talent.beast_cleave)
@@ -121,7 +121,7 @@ lists:
     - barbed_shot
     - cobra_shot,if=(talent.beast_cleave&cooldown.wild_thrash.remains>gcd)
 
-  # actions.drst — Dark Ranger ST
+  
   dark_ranger_st:
   
     #- wailing_arrow,override=bestial_wrath,if=!player.moving&buff.withering_fire.remains<=action.wailing_arrow.execute_time+gcd
@@ -135,7 +135,7 @@ lists:
     - wailing_arrow,override=bestial_wrath,if=buff.bestial_wrath.up&!player.moving
     - cobra_shot,if=cooldown.kill_command.remains>gcd|buff.natures_ally.down
 
-  # actions.drcleave — Dark Ranger cleave
+  
   dark_ranger_aoe:
     - wailing_arrow,override=bestial_wrath,if=buff.bestial_wrath.up&!player.moving&buff.withering_fire.remains<2.5
     - black_arrow,if=pet.buff.beast_cleave.remains<gcd|buff.withering_fire.remains<gcd|prev_gcd.1.wailing_arrow
