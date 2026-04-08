@@ -1,6 +1,4 @@
-# Ported from SimulationCraft midnight default:
-# https://github.com/simulationcraft/simc/blob/midnight/ActionPriorityLists/default/hunter_beast_mastery.simc
-# List names (st, cleave, drst, drcleave, cds, trinkets) match SimC.
+
 
 version: "2.0"
 spec: 253
@@ -36,10 +34,9 @@ config:
     value: 15
 
 variables:
-  # SimC uses active_enemies; here pet.nearby_enemies (pet-centric count)
+  
   route_st: (pet.nearby_enemies<2)|!state.aoe
   route_cleave: (pet.nearby_enemies>1)&state.aoe
-  # Skip BW if fight ends sooner than slider (disabled when min = 0)
   bw_fight_ok: config.bw_min_fight_remains=0|fight_remains>config.bw_min_fight_remains
 
 lists:
