@@ -55,8 +55,8 @@ lists:
     - return,if=state.cds&trinket_1.cd<1&gcd.remains>0
     - call_action_list,name=drst,if=talent.black_arrow.enabled&var.route_st
     - call_action_list,name=drcleave,if=talent.black_arrow.enabled&var.route_cleave
-    #- call_action_list,name=st,if=!talent.black_arrow.enabled&var.route_st
-    #- call_action_list,name=cleave,if=!talent.black_arrow.enabled&var.route_cleave
+    - call_action_list,name=st,if=!talent.black_arrow.enabled&var.route_st
+    - call_action_list,name=cleave,if=!talent.black_arrow.enabled&var.route_cleave
 
   defensives:
     - call_action_list,name=lp_defensives
@@ -137,7 +137,7 @@ lists:
     - wailing_arrow,if=buff.withering_fire.remains<action.wailing_arrow.execute_time+gcd&buff.bestial_wrath.up&!player.moving
     - black_arrow,if=buff.withering_fire.remains<=gcd|prev_gcd.1.wailing_arrow
     - wild_thrash,if=(pet.nearby_enemies>1)&combat.time>1.4
-    - bestial_wrath,if=buff.beast_cleave.remains>gcd&(pet.nearby_enemies>1)&buff.bestial_wrath.down&combat.time>1.4
+    - bestial_wrath,if=buff.beast_cleave.remains>gcd&(pet.nearby_enemies>1)&buff.bestial_wrath.down&combat.time>1.4&(!trinket_1.ready|trinket_1.cd<10)
     - kill_command,if=buff.natures_ally.up&buff.beast_cleave.up
     - barbed_shot,if=cooldown.barbed_shot.full_recharge_time<gcd
     - black_arrow,if=buff.withering_fire.up
