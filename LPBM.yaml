@@ -1,5 +1,3 @@
-
-
 version: "2.0"
 spec: 253
 name: "LPz - BM (SimC midnight default)"
@@ -120,7 +118,7 @@ lists:
 
   
   drst:
-    - bestial_wrath,if=(pet.nearby_enemies>1)&buff.bestial_wrath.down&combat.time>1.4
+    - bestial_wrath,if=(pet.nearby_enemies>=1)&buff.bestial_wrath.down&combat.time>1.4
     - wailing_arrow,if=buff.withering_fire.remains<=action.wailing_arrow.execute_time+2*gcd&buff.bestial_wrath.up
     - kill_command,if=buff.natures_ally.up
     - black_arrow,if=buff.withering_fire.remains<=gcd|buff.withering_fire.up&buff.natures_ally.down|prev_gcd.1.wailing_arrow
@@ -136,9 +134,9 @@ lists:
   drcleave:
     - wailing_arrow,if=buff.withering_fire.remains<action.wailing_arrow.execute_time+gcd&buff.bestial_wrath.up
     - black_arrow,if=buff.withering_fire.remains<=gcd|prev_gcd.1.wailing_arrow
+    - wild_thrash,if=(pet.nearby_enemies>1)&combat.time>1.4
     - bestial_wrath,if=buff.beast_cleave.remains>gcd&(pet.nearby_enemies>1)&buff.bestial_wrath.down&combat.time>1.4
     - kill_command,if=buff.natures_ally.up&buff.beast_cleave.up
-    - wild_thrash,if=(pet.nearby_enemies>1)&combat.time>1.4
     - barbed_shot,if=cooldown.barbed_shot.full_recharge_time<gcd
     - black_arrow,if=buff.withering_fire.up
     - barbed_shot
