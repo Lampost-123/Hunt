@@ -33,8 +33,8 @@ config:
 
 variables:
   
-  route_st: (pet.nearby_enemies<2)|!state.aoe
   route_cleave: (pet.nearby_enemies>1)&state.aoe
+  route_st: !var.route_cleave
   bw_fight_ok: config.bw_min_fight_remains=0|fight_remains>config.bw_min_fight_remains
 
 lists:
@@ -55,8 +55,8 @@ lists:
     - return,if=state.cds&trinket_1.cd<1&gcd.remains>0
     - call_action_list,name=drst,if=talent.black_arrow.enabled&var.route_st
     - call_action_list,name=drcleave,if=talent.black_arrow.enabled&var.route_cleave
-    - call_action_list,name=st,if=!talent.black_arrow.enabled&var.route_st
-    - call_action_list,name=cleave,if=!talent.black_arrow.enabled&var.route_cleave
+    #- call_action_list,name=st,if=!talent.black_arrow.enabled&var.route_st
+    #- call_action_list,name=cleave,if=!talent.black_arrow.enabled&var.route_cleave
 
   defensives:
     - call_action_list,name=lp_defensives
@@ -93,7 +93,7 @@ lists:
 
  
   trinkets:
-    - use_item,name=algethar_puzzle_box,if=(cooldown.bestial_wrath.remains<2|cooldown.bestial_wrath.ready)
+    - use_item,name=algethar_puzzle_box,if=state.cds&(cooldown.bestial_wrath.remains<2|cooldown.bestial_wrath.ready)
     # - trinket_1,if=trinket_1.ready&state.cds&(cooldown.bestial_wrath.remains<2|cooldown.bestial_wrath.ready)
     # - trinket_2,if=trinket_2.ready&state.cds&(cooldown.bestial_wrath.remains<2|cooldown.bestial_wrath.ready)
 
