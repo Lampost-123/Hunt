@@ -34,7 +34,7 @@ config:
 variables:
   
   route_cleave: (pet.nearby_enemies>1)&state.aoe
-  route_st: !var.route_cleave
+  route_st: pet.nearby_enemies<=1|!state.aoe
   bw_fight_ok: config.bw_min_fight_remains=0|fight_remains>config.bw_min_fight_remains
 
 lists:
@@ -138,7 +138,7 @@ lists:
     - black_arrow,if=buff.withering_fire.remains<=gcd|prev_gcd.1.wailing_arrow
     - wild_thrash,if=(pet.nearby_enemies>1)&combat.time>1.4
     - bestial_wrath,if=state.cds&buff.beast_cleave.remains>gcd&pet.nearby_enemies>1&buff.bestial_wrath.down&combat.time>1.4&trinket_1.cd>10&!trinket_1.ready
-    - kill_command,if=buff.natures_ally.up&buff.beast_cleave.up
+    - kill_command,if=buff.natures_ally.up&buff.beast_cleave.up&!(state.cds&cooldown.bestial_wrath.remains<4&cooldown.kill_command.charges_fractional<2)
     - barbed_shot,if=cooldown.barbed_shot.full_recharge_time<gcd
     - black_arrow,if=buff.withering_fire.up
     - barbed_shot
