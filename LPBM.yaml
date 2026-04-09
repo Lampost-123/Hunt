@@ -33,8 +33,8 @@ config:
 
 variables:
   
-  route_st: (pet.nearby_enemies<2)|!state.aoe
   route_cleave: (pet.nearby_enemies>1)&state.aoe
+  route_st: !var.route_cleave
   bw_fight_ok: config.bw_min_fight_remains=0|fight_remains>config.bw_min_fight_remains
 
 lists:
@@ -52,6 +52,7 @@ lists:
     - return,if=!target.valid|target.dead|!target.attackable
     - call_action_list,name=cooldowns,if=state.cds
     - call_action_list,name=trinkets,if=state.cds
+    - return,if=state.cds&trinket_1.cd<1
     - call_action_list,name=drst,if=talent.black_arrow.enabled&var.route_st
     - call_action_list,name=drcleave,if=talent.black_arrow.enabled&var.route_cleave
     - call_action_list,name=st,if=!talent.black_arrow.enabled&var.route_st
@@ -92,8 +93,9 @@ lists:
 
  
   trinkets:
-    - trinket_1,if=trinket_1.ready&state.cds&(cooldown.bestial_wrath.remains<2|cooldown.bestial_wrath.ready)
-    - trinket_2,if=trinket_2.ready&state.cds&(cooldown.bestial_wrath.remains<2|cooldown.bestial_wrath.ready)
+    #- use_item,name=algethar_puzzle_box,if=state.cds&(cooldown.bestial_wrath.remains<2|cooldown.bestial_wrath.ready)
+    - trinket_1,if=trinket_1.ready&(cooldown.bestial_wrath.remains<2|cooldown.bestial_wrath.ready)
+    # - trinket_2,if=trinket_2.ready&state.cds&(cooldown.bestial_wrath.remains<2|cooldown.bestial_wrath.ready)
 
   
   st:
@@ -109,7 +111,7 @@ lists:
   cleave:
     - barbed_shot,if=cooldown.bestial_wrath.remains<gcd
     - wild_thrash,if=talent.beast_cleave&pet.nearby_enemies>=1
-    - bestial_wrath,if=(pet.nearby_enemies>=1)&buff.bestial_wrath.down
+    - bestial_wrath,if=(pet.nearby_enemies>=1)&buff.bestial_wrath.down&trinket_1.cd>10
     - wild_thrash,if=(pet.nearby_enemies>=1) 
     - kill_command 
     - cobra_shot,if=cooldown.wild_thrash.remains>gcd&buff.hogstrider.up&pet.nearby_enemies<4
@@ -118,8 +120,8 @@ lists:
 
   
   drst:
-    - bestial_wrath,if=(pet.nearby_enemies>=1)&buff.bestial_wrath.down&combat.time>1.4
-    - wailing_arrow,if=buff.withering_fire.remains<=action.wailing_arrow.execute_time+2*gcd&buff.bestial_wrath.up
+    - bestial_wrath,if=state.cds&(pet.nearby_enemies>=1)&buff.bestial_wrath.down&combat.time>1.4&trinket_1.cd>10&!trinket_1.ready
+    - wailing_arrow,ignore_cooldown=true,if=buff.withering_fire.remains<=2&buff.bestial_wrath.up&!player.moving
     - kill_command,if=buff.natures_ally.up
     - black_arrow,if=buff.withering_fire.remains<=gcd|buff.withering_fire.up&buff.natures_ally.down|prev_gcd.1.wailing_arrow
     - barbed_shot,if=state.cds&cooldown.bestial_wrath.remains<2*gcd
@@ -127,19 +129,19 @@ lists:
     - cobra_shot,if=talent.killer_cobra&buff.bestial_wrath.up&cooldown.barbed_shot.charges_fractional<1.4
     - barbed_shot
     - black_arrow
-    - wailing_arrow,if=buff.bestial_wrath.up
+    - wailing_arrow,ignore_cooldown=true,if=buff.bestial_wrath.up&!player.moving
     - cobra_shot,if=cooldown.kill_command.remains>gcd|buff.natures_ally.down
 
   
   drcleave:
-    - wailing_arrow,if=buff.withering_fire.remains<action.wailing_arrow.execute_time+gcd&buff.bestial_wrath.up
+    - wailing_arrow,ignore_cooldown=true,if=buff.withering_fire.remains<2&buff.bestial_wrath.up&!player.moving
     - black_arrow,if=buff.withering_fire.remains<=gcd|prev_gcd.1.wailing_arrow
     - wild_thrash,if=(pet.nearby_enemies>1)&combat.time>1.4
-    - bestial_wrath,if=buff.beast_cleave.remains>gcd&(pet.nearby_enemies>1)&buff.bestial_wrath.down&combat.time>1.4
+    - bestial_wrath,if=state.cds&buff.beast_cleave.remains>gcd&pet.nearby_enemies>1&buff.bestial_wrath.down&combat.time>1.4&trinket_1.cd>10&!trinket_1.ready
     - kill_command,if=buff.natures_ally.up&buff.beast_cleave.up
     - barbed_shot,if=cooldown.barbed_shot.full_recharge_time<gcd
     - black_arrow,if=buff.withering_fire.up
     - barbed_shot
     - black_arrow
-    - wailing_arrow,if=buff.bestial_wrath.up
+    - wailing_arrow,ignore_cooldown=true,if=buff.bestial_wrath.up&!player.moving
     - cobra_shot,if=cooldown.wild_thrash.remains>gcd|buff.natures_ally.down
