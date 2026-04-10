@@ -52,7 +52,7 @@ lists:
     - return,if=!target.valid|target.dead|!target.attackable
     - call_action_list,name=cooldowns,if=state.cds
     - call_action_list,name=trinkets,if=state.cds
-    - return,if=state.cds&trinket_1.cd<1
+    #- return,if=state.cds&trinket_1.cd<1
     - call_action_list,name=drst,if=talent.black_arrow.enabled&var.route_st
     - call_action_list,name=drcleave,if=talent.black_arrow.enabled&var.route_cleave
     - call_action_list,name=st,if=!talent.black_arrow.enabled&var.route_st
