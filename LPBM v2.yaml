@@ -42,10 +42,7 @@ config:
 variables:
   route_cleave: (pet.nearby_enemies>1)&state.aoe&player.health.pct>2
   route_st: (pet.nearby_enemies<=1|!state.aoe)&player.health.pct>2
-  bw_fight_ok: fight_remains>=16&target.time_to_die>config.bw_min_fight_remains&target.health.pct>2
-  cobra_filler: focus>=60&player.health.pct>2
-  dr_aoe_cobra_ok: focus>=35&((focus-35)+focus.regen*(cooldown.kill_command.remains>cooldown.wild_thrash.remains))>=30&player.health.pct>2
-  na_cobra: (!buff.natures_ally.up|buff.natures_ally.remains<gcd*2)&focus>=35&player.health.pct>2
+  bw_fight_ok: (fight_remains>=16&target.time_to_die>config.bw_min_fight_remains&target.classification>3|target.npcid=243208)&target.health.pct>2
   wt_ok_for_bw: buff.bestial_wrath.up|cooldown.bestial_wrath.remains>=cooldown.wild_thrash.duration|!buff.beast_cleave.up|!state.cds|!var.bw_fight_ok
   wt_focus_ok: focus>=(35+action.cobra_shot.cost)|cooldown.wild_thrash.remains>gcd*2
 
@@ -115,22 +112,23 @@ lists:
     - hunters_mark,if=nameplates.debuff.hunters_mark.count=0&((target.time_to_die>15&(target.boss|target.classification>3)))
 
   cleave:
+    - barbed_shot,if=state.cds&buff.bestial_wrath.down&(cooldown.bestial_wrath.remains<2*gcd|cooldown.bestial_wrath.ready)
     - barbed_shot,if=cooldown.barbed_shot.full_recharge_time<gcd
     - wild_thrash,if=pet.nearby_enemies>=1
-    - bestial_wrath,if=state.cds&buff.beast_cleave.up&buff.bestial_wrath.down&pet.nearby_enemies>=1&combat.time>=1.2
+    - bestial_wrath,if=var.bw_fight_ok&state.cds&buff.beast_cleave.up&buff.bestial_wrath.down&pet.nearby_enemies>=1&combat.time>=1.2
     - wild_thrash,if=pet.nearby_enemies>=1
-    - kill_command,if=buff.natures_ally.up
-    - cobra_shot,if=cooldown.wild_thrash.remains>gcd&buff.hogstrider.up&active_enemies<4
+    - kill_command,if=buff.natures_ally.up&buff.beast_cleave.up&((state.cds&var.bw_fight_ok&(cooldown.bestial_wrath.remains>cooldown.kill_command.remains+gcd|buff.bestial_wrath.up|cooldown.kill_command.charges>=2))|!state.cds|!var.bw_fight_ok)
+    - cobra_shot,if=cooldown.wild_thrash.remains>gcd&buff.hogstrider.up&active_enemies<4&var.wt_focus_ok
     - barbed_shot
-    - cobra_shot,if=(talent.beast_cleave&cooldown.wild_thrash.remains>gcd)|!talent.beast_cleave
+    - cobra_shot,if=((talent.beast_cleave&cooldown.wild_thrash.remains>gcd)|!talent.beast_cleave)&var.wt_focus_ok
 
   drcleave:
     - barbed_shot,if=state.cds&buff.bestial_wrath.down&(cooldown.bestial_wrath.remains<2*gcd|cooldown.bestial_wrath.ready)
     - black_arrow,if=prev_gcd.1.wailing_arrow|buff.beast_cleave.remains<gcd|(state.cds&(cooldown.bestial_wrath.remains<2*gcd|cooldown.bestial_wrath.ready))
     - bestial_wrath,if=var.bw_fight_ok&state.cds&buff.beast_cleave.up&buff.bestial_wrath.down&pet.nearby_enemies>=1&combat.time>1.2
     - wild_thrash,if=pet.nearby_enemies>=1&var.wt_ok_for_bw
-    - kill_command,if=buff.natures_ally.up&buff.beast_cleave.up&((state.cds&var.bw_fight_ok&(cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd|buff.bestial_wrath.up))|!state.cds|!var.bw_fight_ok)
-    - barbed_shot,if=cooldown.barbed_shot.charges_fractional>=2
+    - kill_command,if=buff.natures_ally.up&buff.beast_cleave.up&((state.cds&var.bw_fight_ok&(cooldown.bestial_wrath.remains>cooldown.kill_command.remains+gcd|buff.bestial_wrath.up|cooldown.kill_command.charges>=2))|!state.cds|!var.bw_fight_ok)
+    - barbed_shot,if=cooldown.barbed_shot.charges_fractional>=1.7
     - black_arrow,if=buff.withering_fire.up&var.wt_focus_ok
     - wailing_arrow,ignore_cooldown=true,if=!player.moving&buff.withering_fire.up&cooldown.kill_command.charges_fractional<2&var.wt_focus_ok
     - barbed_shot
@@ -140,20 +138,19 @@ lists:
   drst:
     - barbed_shot,if=state.cds&buff.bestial_wrath.down&(cooldown.bestial_wrath.remains<2*gcd|cooldown.bestial_wrath.ready)
     - bestial_wrath,if=var.bw_fight_ok&state.cds&buff.bestial_wrath.down&pet.nearby_enemies>=1&combat.time>1.2
-    - kill_command,if=buff.natures_ally.up&((state.cds&var.bw_fight_ok&(cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd|buff.bestial_wrath.up))|!state.cds|!var.bw_fight_ok)
+    - kill_command,if=buff.natures_ally.up&((state.cds&var.bw_fight_ok&(cooldown.bestial_wrath.remains>cooldown.kill_command.remains+gcd|buff.bestial_wrath.up|cooldown.kill_command.charges>=2))|!state.cds|!var.bw_fight_ok)
+    - barbed_shot,if=cooldown.barbed_shot.charges_fractional>=1.7
     - black_arrow,if=buff.withering_fire.up
-    - wailing_arrow,ignore_cooldown=true,if=!player.moving&buff.withering_fire.up&buff.withering_fire.remains<execute_time+2*gcd
-    - black_arrow,if=prev_gcd.1.wailing_arrow
-    - barbed_shot,if=cooldown.barbed_shot.charges_fractional>=2
-    - black_arrow
+    - wailing_arrow,ignore_cooldown=true,if=!player.moving&buff.withering_fire.up&cooldown.kill_command.charges_fractional<2
     - barbed_shot
+    - black_arrow
     - cobra_shot
 
   st:
     - barbed_shot,if=state.cds&buff.bestial_wrath.down&(cooldown.bestial_wrath.remains<2*gcd|cooldown.bestial_wrath.ready)
-    - bestial_wrath,if=state.cds&buff.bestial_wrath.down&pet.nearby_enemies>=1&combat.time>=1.2
-    - kill_command,if=buff.natures_ally.up&((state.cds&var.bw_fight_ok&(cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd|buff.bestial_wrath.up))|!state.cds|!var.bw_fight_ok)
-    - barbed_shot,if=(focus<75|cooldown.barbed_shot.full_recharge_time<gcd)&!talent.serpentine_strikes|talent.serpentine_strikes
+    - bestial_wrath,if=var.bw_fight_ok&state.cds&buff.bestial_wrath.down&pet.nearby_enemies>=1&combat.time>=1.2
+    - kill_command,if=buff.natures_ally.up&((state.cds&var.bw_fight_ok&(cooldown.bestial_wrath.remains>cooldown.kill_command.remains+gcd|buff.bestial_wrath.up|cooldown.kill_command.charges>=2))|!state.cds|!var.bw_fight_ok)
+    - barbed_shot
     - cobra_shot
 
   trinkets:
