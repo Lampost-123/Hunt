@@ -44,7 +44,7 @@ variables:
   route_st: (pet.nearby_enemies<=1|!state.aoe)&player.health.pct>2
   bw_fight_ok: (fight_remains>=16&target.time_to_die>config.bw_min_fight_remains&target.classification>3&target.health.pct>2)|target.npcid=243208
   wt_ok_for_bw: buff.bestial_wrath.up|cooldown.bestial_wrath.remains>cooldown.wild_thrash.duration+2*gcd|!state.cds|!var.bw_fight_ok
-  wt_focus_ok: focus>=(35+action.cobra_shot.cost)|cooldown.wild_thrash.remains>gcd*2
+  wt_focus_ok: focus>=action.wild_thrash.cost|cooldown.wild_thrash.remains>gcd
 
 lists:
   main:
