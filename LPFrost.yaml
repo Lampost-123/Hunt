@@ -1,0 +1,207 @@
+spec: 64
+name: "LP-Frost Mage Spellslinger"
+author: "LPFrost - SS"
+version: "0.6.23"
+description: "Its cold in here"
+
+config:
+  use_cooldowns:
+    label: "Use major cooldowns (Time Warp, trinkets, racials)"
+    section: "Cooldowns"
+    type: checkbox
+    default: true
+  use_defensives:
+    label: "Auto-cast Ice Barrier / Ice Block"
+    section: "Defensives"
+    type: checkbox
+    default: true
+  auto_interrupt:
+    label: "Auto Counterspell (target / focus / mouseover)"
+    section: "Interrupts"
+    type: checkbox
+    default: true
+  auto_spellsteal:
+    label: "Spell Steal — auto when target has stealable magic"
+    section: "Utility"
+    type: checkbox
+    default: true
+  spellsteal_mouseover:
+    label: "Spell Steal — also on mouseover"
+    section: "Utility"
+    type: checkbox
+    default: true
+  auto_remove_curse:
+    label: "Auto Remove Curse (self + party)"
+    section: "Utility"
+    type: checkbox
+    default: true
+  auto_arcane_intellect:
+    label: "Auto Arcane Intellect (self + party, OOC)"
+    section: "Utility"
+    type: checkbox
+    default: true
+  dying_target_guards:
+    label: "Skip hardcasts on near-dead mobs"
+    section: "Rotation"
+    type: checkbox
+    default: false
+  aoe_threshold:
+    label: "AoE cutover (>= N enemies around target)"
+    section: "Rotation"
+    type: slider
+    default: 3
+    min: 2
+    max: 8
+  rof_bank_charges:
+    label: "Ray of Frost — charges to bank outside boss / AoE"
+    section: "Rotation"
+    type: slider
+    default: 1
+    min: 0
+    max: 2
+  rof_orb_hold_gcd:
+    label: "RoF vs Orb — extra GCDs buffer"
+    section: "Rotation"
+    type: slider
+    default: 0
+    min: 0
+    max: 5
+  orb_min_fight_remains:
+    label: "Frozen Orb — min fight time (sec), non-boss"
+    section: "Rotation"
+    type: slider
+    default: 26
+    min: 0
+    max: 120
+  orb_min_time_to_die:
+    label: "Frozen Orb — min target TTD (sec)"
+    section: "Rotation"
+    type: slider
+    default: 20
+    min: 0
+    max: 60
+  rof_min_time_to_die:
+    label: "Ray of Frost — min target TTD (sec)"
+    section: "Rotation"
+    type: slider
+    default: 4
+    min: 0
+    max: 60
+  barrier_hp:
+    label: "Ice Barrier refresh HP (%)"
+    section: "Defensives"
+    type: slider
+    default: 95
+    min: 50
+    max: 100
+  ice_block_hp:
+    label: "Ice Block emergency HP (%)"
+    section: "Defensives"
+    type: slider
+    default: 20
+    min: 5
+    max: 40
+
+variables:
+  is_aoe: enemies_around_target>=config.aoe_threshold
+  target_is_boss: target.boss|target.classification=worldboss|target.classification=rareelite
+  target_dying: target.time_to_die>0&target.time_to_die<=gcd*2
+  flurry_ok: buff.brain_freeze.react&buff.thermal_void.down
+  hardcast_safe_gs: >
+    (!config.dying_target_guards)|target.time_to_die=0|target.time_to_die>1.5
+  rof_ttd_ok: >
+    target.time_to_die=0|target.time_to_die>=config.rof_min_time_to_die
+  hardcast_safe_rof: >
+    (!config.dying_target_guards)|variable.rof_ttd_ok
+  hardcast_safe_il: >
+    (!config.dying_target_guards)|(!variable.target_dying)
+  rof_spend_ok: >
+    cooldown.ray_of_frost.charges>=(config.rof_bank_charges+1)|
+    variable.target_is_boss
+  rof_orb_window_ok: >
+    cooldown.frozen_orb.ready|
+    (cooldown.frozen_orb.remains>=action.ray_of_frost.execute_time+gcd*config.rof_orb_hold_gcd)
+  orb_ready: !player.moving&!player.channeling
+  orb_fight_ok: >
+    (target.time_to_die=0|target.time_to_die>=config.orb_min_time_to_die)&
+    (variable.target_is_boss|target.npcid=243208|fight_remains>=config.orb_min_fight_remains)
+  blizzard_use_ok: >
+    buff.freezing_rain.up&buff.freezing_rain.remains>0.35&enemies_around_target>2
+  rof_opener_fresh: >
+    !prev_gcd.1.ray_of_frost&!prev_gcd.2.ray_of_frost&!prev_gcd.3.ray_of_frost&!prev_gcd.4.ray_of_frost
+
+lists:
+  main:
+    - ice_block,range_check=none,if=player.channeling&config.use_defensives&health.pct<config.ice_block_hp&cooldown.ice_block.ready
+    - return,if=player.channeling
+    - call_action_list,name=spell_queue
+    - call_action_list,name=sanity_checks
+    - call_action_list,name=auto_target_ranged
+    - call_action_list,name=auto_heal
+    - call_action_list,name=auto_mana
+    - call_action_list,name=buffs,if=!player.combat
+    - call_action_list,name=interrupts,if=config.auto_interrupt
+    - call_action_list,name=auto_purge_magic,if=config.auto_spellsteal
+    - call_action_list,name=dispel,if=config.auto_remove_curse
+    - call_action_list,name=defensives,if=config.use_defensives
+    - return,if=config.auto_combat.has(0)
+    - return,if=config.auto_combat>=1&!auto_combat
+    - return,if=target.dead|!target.attackable|!target.enemy
+    - call_action_list,name=cooldowns,if=config.use_cooldowns
+    - call_action_list,name=rotation
+    - call_action_list,name=movement,if=player.moving
+
+  buffs:
+    - arcane_intellect,range_check=none,if=config.auto_arcane_intellect&(!buff.arcane_intellect.up|buff.arcane_intellect.remains<300)
+    - arcane_intellect,delay=500,cycle=party,if=config.auto_arcane_intellect&(cycle.buff.arcane_intellect.down.any|cycle.buff.arcane_intellect.remains.any<300)
+    - ice_barrier,range_check=none,if=!buff.ice_barrier.up&cooldown.ice_barrier.charges>=1
+
+  interrupts:
+    - counterspell,interrupt=true,if=config.interrupt_target&target.casting.interruptible&target.casting.important
+    - counterspell,interrupt=true,if=config.interrupt_target&target.casting.interruptible&target.casting.remains<=target.casting.elapsed
+    - counterspell.focus,range_check=focus,interrupt=true,if=config.interrupt_focus&focus.casting.interruptible&focus.casting.remains<=focus.casting.elapsed
+    - counterspell.mouseover,range_check=mouseover,interrupt=true,if=config.interrupt_mouseover&mouseover.enemy&mouseover.casting.interruptible&mouseover.casting.remains<=mouseover.casting.elapsed
+
+  auto_purge_magic:
+    - spellsteal.mouseover,range_check=mouseover,if=config.spellsteal_mouseover&mouseover.enemy&mouseover.purgeable.list&!player.moving
+    - spellsteal,if=target.purgeable.list&!player.moving
+
+  dispel:
+    - remove_curse,range_check=none,if=player.dispelable.curse
+    - remove_curse,delay=500,cycle=party,if=cycle.dispelable.list
+
+  defensives:
+    - ice_barrier,range_check=none,if=buff.ice_barrier.down&cooldown.ice_barrier.charges>=1&health.pct<config.barrier_hp
+    - ice_block,range_check=none,if=health.pct<config.ice_block_hp&cooldown.ice_block.ready
+
+  cooldowns: []
+
+  aoe_opener:
+    - flurry,if=variable.flurry_ok
+    - frozen_orb,if=variable.orb_ready&state.cds&variable.orb_fight_ok
+    - blizzard,if=variable.blizzard_use_ok
+    - ray_of_frost,if=variable.hardcast_safe_rof&variable.rof_opener_fresh
+
+  st_opener:
+    - ray_of_frost,if=variable.hardcast_safe_rof&variable.rof_opener_fresh
+    - ice_lance,if=variable.hardcast_safe_il
+
+  rotation:
+    - call_action_list,name=aoe_opener,if=variable.is_aoe&combat.time<=3
+    - call_action_list,name=st_opener,if=!variable.is_aoe&combat.time<=3
+    - comet_storm,if=talent.comet_storm
+    - blizzard,if=variable.blizzard_use_ok
+    - flurry,if=variable.flurry_ok
+    - frozen_orb,if=variable.orb_ready&state.cds&variable.orb_fight_ok
+    - ice_lance,if=buff.fingers_of_frost.stack=2
+    - glacial_spike,if=variable.hardcast_safe_gs
+    - ice_lance,if=buff.fingers_of_frost.react
+    - ice_lance,if=debuff.freezing.stack>=6
+    - flurry,if=cooldown.flurry.ready
+    - ray_of_frost,if=variable.rof_spend_ok&variable.hardcast_safe_rof&variable.rof_orb_window_ok
+    - frostbolt,if=!player.moving
+    - ice_lance
+
+  movement:
+    - blizzard,if=variable.blizzard_use_ok
+    - ice_lance
