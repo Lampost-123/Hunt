@@ -1,7 +1,7 @@
 spec: 64
 name: "LP-Frost Mage Spellslinger"
 author: "LPFrost - SS"
-version: "0.6.25"
+version: "0.6.17"
 description: "Its cold in here"
 
 config:
@@ -21,32 +21,32 @@ config:
     type: checkbox
     default: true
   auto_spellsteal:
-    label: "Spell Steal — auto when target has stealable magic"
+    label: "Spell Steal — auto when target has stealable magic (purgeable list)"
     section: "Utility"
     type: checkbox
     default: true
   spellsteal_mouseover:
-    label: "Spell Steal — also on mouseover"
+    label: "Spell Steal — also on mouseover (when stealable)"
     section: "Utility"
     type: checkbox
     default: true
   auto_remove_curse:
-    label: "Auto Remove Curse (self + party)"
+    label: "Auto Remove Curse (self priority + party scan)"
     section: "Utility"
     type: checkbox
     default: true
   auto_arcane_intellect:
-    label: "Auto Arcane Intellect (self + party, OOC)"
+    label: "Auto Arcane Intellect — self + party (out of combat)"
     section: "Utility"
     type: checkbox
     default: true
   dying_target_guards:
-    label: "Skip hardcasts on near-dead mobs"
+    label: "Skip hardcasts on near-dead mobs (opt-in)"
     section: "Rotation"
     type: checkbox
     default: false
   aoe_threshold:
-    label: "AoE cutover (>= N enemies around target)"
+    label: "AoE priority cutover (>= N enemies around target)"
     section: "Rotation"
     type: slider
     default: 3
@@ -60,33 +60,19 @@ config:
     min: 0
     max: 2
   rof_orb_hold_gcd:
-    label: "RoF vs Orb — extra GCDs buffer"
+    label: "RoF vs Orb — extra GCDs (Orb CD must exceed RoF execute time + N×GCD)"
     section: "Rotation"
     type: slider
     default: 0
     min: 0
     max: 5
   orb_min_fight_remains:
-    label: "Frozen Orb — min fight time (sec), non-boss"
+    label: "Frozen Orb — min fight time (sec) on non-boss (0 = no gate; bosses ignore)"
     section: "Rotation"
     type: slider
     default: 26
     min: 0
     max: 120
-  orb_min_time_to_die:
-    label: "Frozen Orb — min target TTD (sec)"
-    section: "Rotation"
-    type: slider
-    default: 20
-    min: 0
-    max: 60
-  rof_min_time_to_die:
-    label: "Ray of Frost — min target TTD (sec)"
-    section: "Rotation"
-    type: slider
-    default: 4
-    min: 0
-    max: 60
   barrier_hp:
     label: "Ice Barrier refresh HP (%)"
     section: "Defensives"
@@ -109,27 +95,28 @@ variables:
   flurry_ok: buff.brain_freeze.react&buff.thermal_void.down
   hardcast_safe_gs: >
     (!config.dying_target_guards)|target.time_to_die=0|target.time_to_die>1.5
-  rof_ttd_ok: >
-    target.time_to_die=0|target.time_to_die>=config.rof_min_time_to_die
   hardcast_safe_rof: >
-    (!config.dying_target_guards)|variable.rof_ttd_ok
+    (!config.dying_target_guards)|target.time_to_die=0|target.time_to_die>3.5
   hardcast_safe_il: >
     (!config.dying_target_guards)|(!variable.target_dying)
   rof_spend_ok: >
     cooldown.ray_of_frost.charges>=(config.rof_bank_charges+1)|
-    variable.target_is_boss
+    variable.target_is_boss|
+    variable.is_aoe|
+    (target.time_to_die>0&target.time_to_die<6)
   rof_orb_window_ok: >
     cooldown.frozen_orb.ready|
     (cooldown.frozen_orb.remains>=action.ray_of_frost.execute_time+gcd*config.rof_orb_hold_gcd)
-  orb_ready: (!player.moving&!player.channeling)
+  orb_ready: >
+    !player.moving&!player.channeling
   orb_fight_ok: >
-    (target.time_to_die=0|target.time_to_die>=config.orb_min_time_to_die)&
-    (variable.target_is_boss|target.npcid=243208|fight_remains>=config.orb_min_fight_remains)
+    variable.target_is_boss|target.npcid=243208|fight_remains>=config.orb_min_fight_remains
+  # Instant Blizzard only — enough Freezing Rain left to stay instant; no hardcast line below.
+  blizzard_fr_instant_ok: >
+    buff.freezing_rain.up&buff.freezing_rain.remains>0.35
+  # Blizzard only when more than 2 enemies around target (3+).
   blizzard_use_ok: >
-    buff.freezing_rain.up&buff.freezing_rain.remains>0.35&enemies_around_target>2
-  rof_opener_fresh: >
-    (!prev_gcd.1.ray_of_frost&!prev_gcd.2.ray_of_frost&!prev_gcd.3.ray_of_frost&!prev_gcd.4.ray_of_frost)|
-    (target.time_to_die>0&target.time_to_die<6)
+    variable.blizzard_fr_instant_ok&enemies_around_target>2
 
 lists:
   main:
@@ -153,8 +140,8 @@ lists:
     - call_action_list,name=movement,if=player.moving
 
   buffs:
-    #- arcane_intellect,range_check=none,if=config.auto_arcane_intellect&(!buff.arcane_intellect.up|buff.arcane_intellect.remains<300)
-   # - arcane_intellect,delay=500,cycle=party,if=config.auto_arcane_intellect&(cycle.buff.arcane_intellect.down.any|cycle.buff.arcane_intellect.remains.any<300)
+  #  - arcane_intellect,range_check=none,if=config.auto_arcane_intellect&(!buff.arcane_intellect.up|buff.arcane_intellect.remains<300)
+    #- arcane_intellect,delay=500,cycle=party,if=config.auto_arcane_intellect&(cycle.buff.arcane_intellect.down.any|cycle.buff.arcane_intellect.remains.any<300)
     - ice_barrier,range_check=none,if=!buff.ice_barrier.up&cooldown.ice_barrier.charges>=1
 
   interrupts:
@@ -181,10 +168,11 @@ lists:
     - flurry,if=variable.flurry_ok
     - frozen_orb,if=variable.orb_ready&state.cds&variable.orb_fight_ok
     - blizzard,if=variable.blizzard_use_ok
-    - ray_of_frost,if=variable.hardcast_safe_rof&variable.rof_opener_fresh
+    - ray_of_frost,if=variable.hardcast_safe_rof&!prev_gcd.1.ray_of_frost&!prev_gcd.2.ray_of_frost&!prev_gcd.3.ray_of_frost&!prev_gcd.4.ray_of_frost
+
 
   st_opener:
-    - ray_of_frost,if=variable.hardcast_safe_rof&variable.rof_opener_fresh
+    - ray_of_frost,if=variable.hardcast_safe_rof&!prev_gcd.1.ray_of_frost&!prev_gcd.2.ray_of_frost&!prev_gcd.3.ray_of_frost&!prev_gcd.4.ray_of_frost
     - ice_lance,if=variable.hardcast_safe_il
 
   rotation:
