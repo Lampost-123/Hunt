@@ -121,14 +121,15 @@ variables:
   rof_orb_window_ok: >
     cooldown.frozen_orb.ready|
     (cooldown.frozen_orb.remains>=action.ray_of_frost.execute_time+gcd*config.rof_orb_hold_gcd)
-  orb_ready: !player.moving&!player.channeling
+  orb_ready: (!player.moving&!player.channeling)
   orb_fight_ok: >
     (target.time_to_die=0|target.time_to_die>=config.orb_min_time_to_die)&
     (variable.target_is_boss|target.npcid=243208|fight_remains>=config.orb_min_fight_remains)
   blizzard_use_ok: >
     buff.freezing_rain.up&buff.freezing_rain.remains>0.35&enemies_around_target>2
   rof_opener_fresh: >
-    !prev_gcd.1.ray_of_frost&!prev_gcd.2.ray_of_frost&!prev_gcd.3.ray_of_frost&!prev_gcd.4.ray_of_frost
+    (!prev_gcd.1.ray_of_frost&!prev_gcd.2.ray_of_frost&!prev_gcd.3.ray_of_frost&!prev_gcd.4.ray_of_frost)|
+    (target.time_to_die>0&target.time_to_die<6)
 
 lists:
   main:
