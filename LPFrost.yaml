@@ -1,7 +1,7 @@
 spec: 64
 name: "LP-Frost Mage Spellslinger"
 author: "LPFrost - SS"
-version: "0.6.23"
+version: "0.6.25"
 description: "Its cold in here"
 
 config:
@@ -154,7 +154,7 @@ lists:
 
   buffs:
     #- arcane_intellect,range_check=none,if=config.auto_arcane_intellect&(!buff.arcane_intellect.up|buff.arcane_intellect.remains<300)
-    #- arcane_intellect,delay=500,cycle=party,if=config.auto_arcane_intellect&(cycle.buff.arcane_intellect.down.any|cycle.buff.arcane_intellect.remains.any<300)
+   # - arcane_intellect,delay=500,cycle=party,if=config.auto_arcane_intellect&(cycle.buff.arcane_intellect.down.any|cycle.buff.arcane_intellect.remains.any<300)
     - ice_barrier,range_check=none,if=!buff.ice_barrier.up&cooldown.ice_barrier.charges>=1
 
   interrupts:
