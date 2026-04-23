@@ -17,12 +17,7 @@ config:
     type: checkbox
     default: true
   auto_interrupt:
-    label: "Auto Countershot (target / focus / Intimidation backup)"
-    section: "Interrupts"
-    type: checkbox
-    default: true
-  auto_interrupt_mouseover:
-    label: "Auto Countershot on mouseover (interrupt)"
+    label: "Auto interrupts (Countershot / Intimidation — uses shared Interrupts + interrupt.*.check)"
     section: "Interrupts"
     type: checkbox
     default: true
@@ -116,11 +111,12 @@ lists:
     - escape_artist,delay=500,if=player.rooted
 
   interrupts:
-    - counter_shot,interrupt=true,if=target.casting.interruptible&target.casting.important
-    - counter_shot,interrupt=true,if=target.casting.interruptible&target.casting.remains<=target.casting.elapsed
-    - counter_shot.focus,range_check=focus,interrupt=true,if=focus.casting.interruptible&focus.casting.remains<=focus.casting.elapsed
-    - counter_shot.mouseover,range_check=mouseover,interrupt=true,if=config.auto_interrupt_mouseover&mouseover.casting.interruptible&mouseover.casting.remains<=mouseover.casting.elapsed
-    - intimidation,interrupt=true,if=pet.alive&!cooldown.counter_shot.ready&target.casting.interruptible&(target.casting.important)
+    # Interrupts
+    - counter_shot,interrupt=true,if=interrupt.target.check
+    - counter_shot.mouseover,range_check=mouseover,interrupt=true,if=interrupt.mouseover.check
+    - counter_shot.focus,range_check=focus,interrupt=true,if=interrupt.focus.check
+    - intimidation,interrupt=true,if=interrupt.cc.check&pet.alive&!cooldown.counter_shot.ready
+    
 
   cds:
     - berserking,if=cooldown.bestial_wrath.ready|fight_remains<13
