@@ -7,7 +7,7 @@ entry: main
 
 config:
   auto_enrage:
-    label: "Auto Tranq Shot (enrage removal)"
+    label: "Auto Tranquilizing Shot (enrage & magic buffs, enemies only)"
     section: "Utility"
     type: checkbox
     default: true
@@ -52,8 +52,9 @@ config:
     default: 1
 
 variables:
-  route_cleave: (pet.nearby_enemies>1)&state.aoe
-  route_st: (pet.nearby_enemies<=1|!state.aoe)
+  # Without Beast Cleave, the cleave list expects buff.beast_cleave — route ST only (mutually exclusive with route_cleave).
+  route_cleave: (pet.nearby_enemies>1)&state.aoe&talent.beast_cleave
+  route_st: (pet.nearby_enemies<=1|!state.aoe)|!talent.beast_cleave
   bw_cleave_ok: (fight_remains>=16&target.time_to_die>config.bw_min_fight_remains&target.classification>3&target.health.pct>7)|target.npcid=243208
   bw_st_ok: ((target.time_to_die>=config.bw_min_ttd_st)&target.classification>3&target.health.pct>7)|target.npcid=243208
   wt_ok_for_bw: buff.bestial_wrath.up|cooldown.bestial_wrath.remains>cooldown.wild_thrash.duration+2*gcd|!state.cds|!var.bw_cleave_ok
@@ -69,7 +70,7 @@ lists:
     - call_action_list,name=defensives,if=config.smart_defensives
     - call_action_list,name=lp_defensives,if=config.use_defensives
     - call_action_list,name=auto_heal
-    - call_action_list,name=auto_mana
+    - call_action_list,name=auto_purge_enrage,if=config.auto_enrage
     - return,if=!target.valid&!((cfg.auto_combat.has(1)&target.quest_mob&target.enemy&!target.dead)|(cfg.auto_combat.has(2)&target.combat&target.enemy&!target.dead)|(cfg.auto_combat.has(3)&target.targeting_party&target.enemy&!target.dead))
     - return,if=!target.valid&cfg.auto_combat.has(0)
     - return,if=!target.valid|target.dead|!target.attackable
@@ -100,8 +101,8 @@ lists:
 
   auto_purge_enrage:
     - return,if=!config.auto_enrage
-    - tranquilizing_shot.mouseover,range_check=mouseover,if=mouseover.purgeable.list
-    - tranquilizing_shot,if=target.purgeable.list
+    - tranquilizing_shot.mouseover,range_check=mouseover,if=mouseover.enemy&(mouseover.purgeable.enrage|mouseover.purgeable.magic)
+    - tranquilizing_shot,if=target.enemy&(target.purgeable.enrage|target.purgeable.magic)
 
   auto_freedom:
     - return,if=!config.auto_freedom_enable
