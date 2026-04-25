@@ -78,6 +78,11 @@ config:
     default: 65
     min: 20
     max: 90
+  auto_hunters_mark:
+    label: "Auto Hunters Mark"
+    section: "Utilities"
+    type: checkbox
+    default: true
   exhilaration_hp:
     label: "Exhilaration HP %"
     section: "Defensives"
@@ -124,6 +129,7 @@ lists:
     - call_action_list,name=sanity_checks
     - call_action_list,name=pet
     - call_action_list,name=auto_target_ranged
+    - call_action_list,name=hunters_mark,if=config.auto_hunters_mark
     - call_action_list,name=interrupts,if=config.auto_interrupt
     - call_action_list,name=defensives,if=config.smart_defensives
     - call_action_list,name=lp_defensives,if=config.use_defensives
@@ -162,7 +168,9 @@ lists:
     - tranquilizing_shot.mouseover,range_check=mouseover,if=mouseover.enemy&(mouseover.purgeable.enrage|mouseover.purgeable.magic)
     - tranquilizing_shot,if=target.enemy&(target.purgeable.enrage|target.purgeable.magic)
 
-  auto_freedom:
+  hunters_mark:
+  - hunters_mark,if=nameplates.debuff.hunters_mark.count=0&((target.time_to_die>15&(target.boss|target.classification>3)))
+     auto_freedom:
     - return,if=!config.auto_freedom_enable
     - masters_call,delay=500,cycle=party,if=cycle.debuff_list.freedom.up
     - masters_call,delay=500,cycle=party,if=incoming_cast.cycle.freedom.up
@@ -183,34 +191,36 @@ lists:
     - berserking,if=config.use_racials&variable.takedown_window
   #  - combat_potion,if=config.use_potion&(target.time_to_die>0&target.time_to_die<25|cooldown.takedown.ready)
     - aspect_of_the_eagle,if=config.use_aspect_of_the_eagle&target.range>=10
+    
 
   trinkets:
     #- trinket_1,if=config.use_trinkets&talent.takedown&trinket_1.usable&(cooldown.takedown.ready|cooldown.takedown.remains<=gcd*2)
 
   plcleave:
-    - kill_command,if=buff.tip_of_the_spear.stack<2&variable.hopl_any_up
-    - kill_command,if=cooldown.takedown.remains<gcd&buff.tip_of_the_spear.stack<2&!talent.twin_fangs
+    - kill_command,if=!prev_gcd.1.kill_command&buff.tip_of_the_spear.stack<2&variable.hopl_any_up
+    - kill_command,if=!prev_gcd.1.kill_command&cooldown.takedown.remains<gcd&buff.tip_of_the_spear.stack<2&!talent.twin_fangs
     - takedown,if=state.cds&(buff.tip_of_the_spear.stack>0&!talent.twin_fangs)|(buff.tip_of_the_spear.stack=0&talent.twin_fangs)
     - flamefang_pitch
     - boomstick,if=buff.tip_of_the_spear.up&variable.boomstick_pl_targets_ok&variable.boomstick_aoe_chim_ok
     - wildfire_bomb,if=cooldown.wildfire_bomb.full_recharge_time<gcd&(!cooldown.boomstick.ready)
     - wildfire_bomb,if=buff.tip_of_the_spear.up&(!cooldown.boomstick.ready)
     - raptor_strike,if=(buff.tip_of_the_spear.up|!buff.raptor_swipe.up&(!cooldown.boomstick.ready))&variable.plcleave_raptor_filler_ok
-    - kill_command,if=cooldown.takedown.remains
+    - kill_command,if=!prev_gcd.1.kill_command&cooldown.takedown.remains&buff.tip_of_the_spear.stack<2
     - wildfire_bomb,if=state.cds&(!cooldown.boomstick.ready)
-    - takedown
+   #- takedown,if=state.cds
 
   plst:
-    - kill_command,if=buff.tip_of_the_spear.stack<2&variable.hopl_any_up
-    - kill_command,if=cooldown.takedown.remains<gcd&buff.tip_of_the_spear.stack<2&!talent.twin_fangs
+    - kill_command,if=!prev_gcd.1.kill_command&buff.tip_of_the_spear.stack<2&variable.hopl_any_up
+    - kill_command,if=!prev_gcd.1.kill_command&cooldown.takedown.remains<gcd&buff.tip_of_the_spear.stack<2&!talent.twin_fangs
     - takedown,if=state.cds&(buff.tip_of_the_spear.stack>0&!talent.twin_fangs)|(buff.tip_of_the_spear.stack=0&talent.twin_fangs)
     - flamefang_pitch
+    - wildfire_bomb,if=cooldown.wildfire_bomb.full_recharge_time<gcd&((talent.lethal_calibration&cooldown.wildfire_bomb.full_recharge_time<4+gcd)|!talent.lethal_calibration)&!cooldown.boomstick.ready
     - boomstick,if=buff.tip_of_the_spear.up&variable.boomstick_pl_targets_ok&variable.boomstick_aoe_chim_ok
     - wildfire_bomb,if=buff.tip_of_the_spear.up&(!cooldown.boomstick.ready)
     - raptor_strike,if=buff.tip_of_the_spear.up|!buff.raptor_swipe.up
-    - kill_command,if=cooldown.takedown.remains
+    - kill_command,if=!prev_gcd.1.kill_command&cooldown.takedown.remains&buff.tip_of_the_spear.stack<2
     - wildfire_bomb,if=(!cooldown.boomstick.ready)
-    - takedown,if=state.cds
+   #- takedown,if=state.cds
 
   sentcleave:
     - takedown,if=(buff.tip_of_the_spear.stack>=2&(!talent.twin_fangs)|buff.tip_of_the_spear.stack=0&talent.twin_fangs)&state.cds&target.range<=8&variable.takedown_ttd_ok
