@@ -70,14 +70,11 @@ variables:
   hardcast_safe_gs: target.time_to_die=0|target.time_to_die>action.glacial_spike.execute_time
   hardcast_safe_rof: target.time_to_die>action.ray_of_frost.execute_time
   orb_ready: (!player.moving&!player.channeling)
-  # TTD defaults to 9999 until Simia has a real estimate — do not treat 9999 as "long enough".
   cds_group_ok: >
     config.cds_group_min_ttd=0|
     (group.lowest.time_to_die>0&group.lowest.time_to_die>=config.cds_group_min_ttd)
-  # Instant Blizzard only — enough Freezing Rain left to stay instant; no hardcast line below.
   blizzard_fr_instant_ok: >
     buff.freezing_rain.up&buff.freezing_rain.remains>0.35
-  # Blizzard only when more than 2 enemies around target (3+).
   blizzard_use_ok: >
     variable.blizzard_fr_instant_ok&enemies_around_target>2
 
