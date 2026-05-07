@@ -98,7 +98,7 @@ lists:
     - hunters_mark,if=nameplates.debuff.hunters_mark.count=0&(target.dummy|(target.time_to_die>15&(target.boss|target.classification>3|target.npcid=243208)))
 
   auto_misdirection:
-    - misdirection,ignore_usable=true,range_check=none,if=!buff.misdirection.up&combat.time<3
+    #- misdirection,ignore_usable=true,range_check=none,if=!buff.misdirection.up&combat.time<3
 
   auto_purge_enrage:
     - return,if=!config.auto_enrage
