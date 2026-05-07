@@ -126,7 +126,7 @@ lists:
     - black_arrow,if=buff.beast_cleave.remains<gcd&enemies_around_target>1
     - bestial_wrath,if=buff.beast_cleave.remains&buff.bestial_wrath.down
     - wild_thrash
-    - kill_command,if=(cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react)|!apex.3
+    - kill_command,if=buff.natures_ally.up
     - barbed_shot,if=cooldown.barbed_shot.full_recharge_time<1*gcd
     - black_arrow,if=buff.withering_fire.up
     - wailing_arrow,if=buff.bestial_wrath.up&buff.withering_fire.remains<action.wailing_arrow.execute_time+gcd
@@ -140,7 +140,7 @@ lists:
     - barbed_shot,if=(talent.bloody_frenzy&talent.snakeskin_quiver&talent.jagged_wounds)&cooldown.bestial_wrath.remains<2*gcd
     - bestial_wrath,if=buff.bestial_wrath.down
     - black_arrow,if=buff.withering_fire.up&cooldown.kill_command.full_recharge_time>gcd
-    - kill_command,if=(cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react)|!apex.3
+    - kill_command,if=buff.natures_ally.up
     - wailing_arrow,if=buff.bestial_wrath.up&buff.withering_fire.remains<action.wailing_arrow.execute_time+2*gcd|time_to_die<action.wailing_arrow.execute_time+gcd
     - cobra_shot,if=talent.killer_cobra&buff.bestial_wrath.up&cooldown.barbed_shot.charges_fractional<1.4&var.wt_focus_ok
     - black_arrow
