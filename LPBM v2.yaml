@@ -48,11 +48,11 @@ config:
     default: 1
 
 variables:
-  wt_focus_ok: cooldown.wild_thrash.remains>gcd+execute_time|focus>=65
-  dr_kc_gate: (cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react)|!apex.3
-  dr_wa_fallback: !cooldown.kill_command.ready&!cooldown.black_arrow.ready
-  bw_ready_or_21: cooldown.bestial_wrath.ready|fight_remains<21
-  bw_ready_or_16: cooldown.bestial_wrath.ready|fight_remains<16
+  wt_focus_ok: "cooldown.wild_thrash.remains>gcd+execute_time|focus>=65"
+  dr_kc_gate: "(cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react)|!apex.3"
+  dr_wa_fallback: "!cooldown.kill_command.ready&!cooldown.black_arrow.ready"
+  bw_ready_or_21: "cooldown.bestial_wrath.ready|fight_remains<21"
+  bw_ready_or_16: "cooldown.bestial_wrath.ready|fight_remains<16"
 
 lists:
   main:
