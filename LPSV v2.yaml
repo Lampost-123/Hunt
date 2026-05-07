@@ -2,7 +2,7 @@ spec: 255
 name: "LP-Survival Hunter v2 (12.0.5)"
 author: "LPSV"
 version: "3.0.0-simple"
-description: "We try again..."
+description: "yeet"
 
 entry: main
 
@@ -37,17 +37,10 @@ config:
     min: 12
     max: 20
   boomstick_aoe_chim:
-    label: "Boss Boomstick hold"
-    section: "Only use Boomstick on bosses when target >= Boss Boomstick hold value"
+    label: "chim"
+    section: "Rotation"
     type: checkbox
     default: false
-  boomstick_aoe_chim_min_enemies:
-    label: "Boss Boomstick hold - min enemies around target"
-    section: "Rotation"
-    type: slider
-    default: 2
-    min: 1
-    max: 8
   auto_interrupt:
     label: "Auto interrupts"
     section: "Interrupts"
@@ -115,7 +108,7 @@ variables:
   hopl_any_up: "buff.howl_of_the_pack_leader.up"
   tip_stack_low: "buff.tip_of_the_spear.stack<2"
   takedown_window: "(buff.takedown.up|cooldown.takedown.ready)"
-  boomstick_aoe_chim_ok: "(config.boomstick_aoe_chim&enemies_around_target>=config.boomstick_aoe_chim_min_enemies)|(!config.boomstick_aoe_chim)"
+  boomstick_aoe_chim_ok: "(config.boomstick_aoe_chim&enemies_around_target>=2)|(!config.boomstick_aoe_chim)"
   boomstick_pl_targets_ok: "enemies_around_target>=2|target.boss|target.time_to_die>27"
   plcleave_raptor_filler_ok: "cooldown.boomstick.remains>=action.boomstick.execute_time|focus>=80"
   boomstick_ttd_ok: "target.time_to_die=0|target.time_to_die>=config.boomstick_min_ttd|target.npcid=243208|target.boss"
@@ -165,13 +158,13 @@ lists:
     - exhilaration,range_check=none,if=player.health.pct<config.exhilaration_hp&variable.sotf_blocking
     - aspect_of_the_turtle,range_check=none,if=player.health.pct<config.turtle_hp&variable.sotf_blocking
 
-  auto_hunters_mark:
-    - hunters_mark,if=nameplates.debuff.hunters_mark.count=0&((target.time_to_die>15&(target.boss|target.classification>3|target.npcid=243208)))
-
   auto_purge_enrage:
     - return,if=!config.auto_enrage
     - tranquilizing_shot.mouseover,range_check=mouseover,if=mouseover.enemy&(mouseover.purgeable.enrage|mouseover.purgeable.magic)
     - tranquilizing_shot,if=target.enemy&(target.purgeable.enrage|target.purgeable.magic)
+
+  auto_hunters_mark:
+    - hunters_mark,if=nameplates.debuff.hunters_mark.count=0&((target.time_to_die>15&(target.boss|target.classification>3|target.npcid=243208)))
 
   auto_freedom:
     - return,if=!config.auto_freedom_enable
