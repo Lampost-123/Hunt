@@ -1,18 +1,13 @@
 spec: 253
 name: "LPBM v2"
 author: "LP"
-version: "3.0.5"
+version: "3.0.3"
 description: "V3"
 entry: main
 
 config:
   auto_hunters_mark:
     label: "Auto Hunter's Mark when no allied mark on nameplates"
-    section: "Utility"
-    type: checkbox
-    default: true
-  auto_misdirection:
-    label: "Auto Misdirection"
     section: "Utility"
     type: checkbox
     default: true
@@ -49,7 +44,7 @@ config:
 
 variables:
   wt_focus_ok: cooldown.wild_thrash.remains>gcd+execute_time|focus>=65
-  cs_focus_ok: cooldown.kill_command.remains>gcd+execute_time|focus>=65|buff.natures_ally.up
+  cs_focus_ok: cooldown.kill_command.remains>gcd+execute_time|focus>=65|buff.natures_ally.down
 
 lists:
   main:
@@ -66,7 +61,6 @@ lists:
     - return,if=!target.valid&cfg.auto_combat.has(0)
     - return,if=!target.valid|target.dead|!target.attackable
     - call_action_list,name=auto_hunters_mark,if=config.auto_hunters_mark
-    - call_action_list,name=auto_misdirection,if=config.auto_misdirection
     - call_action_list,name=cds
     - call_action_list,name=trinkets
     - call_action_list,name=drst,if=talent.black_arrow&(active_enemies<2|!talent.beast_cleave&active_enemies<3)
@@ -93,9 +87,6 @@ lists:
 
   auto_hunters_mark:
     - hunters_mark,if=nameplates.debuff.hunters_mark.count=0&(target.dummy|(target.time_to_die>15&(target.boss|target.classification>3|target.npcid=243208)))
-
-  auto_misdirection:
-    - misdirection,ignore_usable=true,range_check=none,if=!buff.misdirection.up
 
   auto_purge_enrage:
     - return,if=!config.auto_enrage
@@ -136,7 +127,6 @@ lists:
     - bestial_wrath,if=buff.beast_cleave.remains&buff.bestial_wrath.down
     - wild_thrash
     - kill_command,if=(cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react)|!apex.3
-    - wailing_arrow,if=buff.bestial_wrath.up&!cooldown.kill_command.ready&!cooldown.black_arrow.ready
     - barbed_shot,if=cooldown.barbed_shot.full_recharge_time<1*gcd
     - black_arrow,if=buff.withering_fire.up
     - wailing_arrow,if=buff.bestial_wrath.up&buff.withering_fire.remains<action.wailing_arrow.execute_time+gcd
@@ -151,7 +141,7 @@ lists:
     - bestial_wrath,if=buff.bestial_wrath.down
     - black_arrow,if=buff.withering_fire.up&cooldown.kill_command.full_recharge_time>gcd
     - kill_command,if=(cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react)|!apex.3
-    - wailing_arrow,if=buff.bestial_wrath.up&(!cooldown.kill_command.ready&!cooldown.black_arrow.ready|time_to_die<action.wailing_arrow.execute_time+gcd)
+    - wailing_arrow,if=buff.bestial_wrath.up&buff.withering_fire.remains<action.wailing_arrow.execute_time+2*gcd|time_to_die<action.wailing_arrow.execute_time+gcd
     - cobra_shot,if=talent.killer_cobra&buff.bestial_wrath.up&cooldown.barbed_shot.charges_fractional<1.4&var.wt_focus_ok
     - black_arrow
     - barbed_shot
@@ -166,13 +156,4 @@ lists:
     - cobra_shot,if=cooldown.bestial_wrath.remains>gcd
 
   trinkets:
-    - use_item,name=light_company_guidon,if=cooldown.bestial_wrath.ready|fight_remains<21
-    - use_item,name=void_execution_mandate,if=cooldown.bestial_wrath.ready|fight_remains<21
-    - use_item,name=algethar_puzzle_box,if=cooldown.bestial_wrath.remains<2|fight_remains<23
-    - use_item,name=emberwing_feather,if=cooldown.bestial_wrath.ready|fight_remains<16
-    - use_item,name=freightrunners_flask,if=cooldown.bestial_wrath.ready|fight_remains<16
-    - use_item,name=sealed_chaos_urn,if=cooldown.bestial_wrath.ready|fight_remains<21
-    - use_item,name=evercollapsing_void_fissure,if=cooldown.bestial_wrath.ready|fight_remains<11
-    - use_item,name=rangercaptains_iridescent_insignia
-    - use_item,name=void_stalkers_contract
-    - use_item,name=latchs_crooked_hook
+  #TODO: add trinkets
