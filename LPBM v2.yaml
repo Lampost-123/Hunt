@@ -1,8 +1,8 @@
 spec: 253
 name: "LPBM v2"
 author: "LP"
-version: "3.0.6"
-description: "V3."
+version: "3.0.5"
+description: "V3"
 entry: main
 
 config:
@@ -48,11 +48,8 @@ config:
     default: 1
 
 variables:
-  wt_focus_ok: "cooldown.wild_thrash.remains>gcd+execute_time|focus>=65"
-  dr_kc_gate: "(cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react)|!apex.3"
-  dr_wa_fallback: "!cooldown.kill_command.ready&!cooldown.black_arrow.ready"
-  bw_ready_or_21: "cooldown.bestial_wrath.ready|fight_remains<21"
-  bw_ready_or_16: "cooldown.bestial_wrath.ready|fight_remains<16"
+  wt_focus_ok: cooldown.wild_thrash.remains>gcd+execute_time|focus>=65
+  cs_focus_ok: cooldown.kill_command.remains>gcd+execute_time|focus>=65|buff.natures_ally.up
 
 lists:
   main:
@@ -78,7 +75,7 @@ lists:
     - call_action_list,name=cleave,if=!talent.black_arrow&(active_enemies>2|talent.beast_cleave&active_enemies>1)
 
   pet:
-    - revive_pet,range_check=none,if=!pet.alive&pet.exists
+    - revive_pet,range_check=none,if=pet.dead
     - call_pet_1,range_check=none,if=!pet.alive&config.pet_slot=1
     - call_pet_2,range_check=none,if=!pet.alive&config.pet_slot=2
     - call_pet_3,range_check=none,if=!pet.alive&config.pet_slot=3
@@ -98,7 +95,7 @@ lists:
     - hunters_mark,if=nameplates.debuff.hunters_mark.count=0&(target.dummy|(target.time_to_die>15&(target.boss|target.classification>3|target.npcid=243208)))
 
   auto_misdirection:
-    #- misdirection,ignore_usable=true,range_check=none,if=!buff.misdirection.up&combat.time<3
+    - misdirection,ignore_usable=true,range_check=none,if=!buff.misdirection.up
 
   auto_purge_enrage:
     - return,if=!config.auto_enrage
@@ -114,14 +111,14 @@ lists:
 
   interrupts:
     - counter_shot,interrupt=true,if=interrupt.target.check
-    - counter_shot.mouseover,range_check=mouseover,interrupt=true,if=mouseover.enemy&interrupt.mouseover.check
+    - counter_shot.mouseover,range_check=mouseover,interrupt=true,if=interrupt.mouseover.check
     - counter_shot.focus,range_check=focus,interrupt=true,if=interrupt.focus.check
     - intimidation,interrupt=true,if=interrupt.cc.check&pet.alive&!cooldown.counter_shot.ready
 
   cds:
     - berserking,if=cooldown.bestial_wrath.ready|fight_remains<13
-    - blood_fury,if=var.bw_ready_or_16
-    - ancestral_call,if=var.bw_ready_or_16
+    - blood_fury,if=cooldown.bestial_wrath.ready|fight_remains<16
+    - ancestral_call,if=cooldown.bestial_wrath.ready|fight_remains<16
     - fireblood,if=cooldown.bestial_wrath.ready|fight_remains<9
 
   cleave:
@@ -138,8 +135,8 @@ lists:
     - black_arrow,if=buff.beast_cleave.remains<gcd&enemies_around_target>1
     - bestial_wrath,if=buff.beast_cleave.remains&buff.bestial_wrath.down
     - wild_thrash
-    - kill_command,if=var.dr_kc_gate
-    - wailing_arrow,if=buff.bestial_wrath.up&var.dr_wa_fallback
+    - kill_command,if=(cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react)|!apex.3
+    - wailing_arrow,if=buff.bestial_wrath.up&!cooldown.kill_command.ready&!cooldown.black_arrow.ready
     - barbed_shot,if=cooldown.barbed_shot.full_recharge_time<1*gcd
     - black_arrow,if=buff.withering_fire.up
     - wailing_arrow,if=buff.bestial_wrath.up&buff.withering_fire.remains<action.wailing_arrow.execute_time+gcd
@@ -153,12 +150,12 @@ lists:
     - barbed_shot,if=(talent.bloody_frenzy&talent.snakeskin_quiver&talent.jagged_wounds)&cooldown.bestial_wrath.remains<2*gcd
     - bestial_wrath,if=buff.bestial_wrath.down
     - black_arrow,if=buff.withering_fire.up&cooldown.kill_command.full_recharge_time>gcd
-    - kill_command,if=var.dr_kc_gate
-    - wailing_arrow,if=buff.bestial_wrath.up&(var.dr_wa_fallback|time_to_die<action.wailing_arrow.execute_time+gcd)
-    - cobra_shot,if=talent.killer_cobra&buff.bestial_wrath.up&cooldown.barbed_shot.charges_fractional<1.4
+    - kill_command,if=(cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react)|!apex.3
+    - wailing_arrow,if=buff.bestial_wrath.up&(!cooldown.kill_command.ready&!cooldown.black_arrow.ready|time_to_die<action.wailing_arrow.execute_time+gcd)
+    - cobra_shot,if=talent.killer_cobra&buff.bestial_wrath.up&cooldown.barbed_shot.charges_fractional<1.4&var.wt_focus_ok
     - black_arrow
     - barbed_shot
-    - cobra_shot,if=cooldown.kill_command.remains>gcd|buff.natures_ally.down
+    - cobra_shot,if=var.cs_focus_ok
 
   st:
     - barbed_shot,if=cooldown.bestial_wrath.remains<gcd
@@ -169,4 +166,13 @@ lists:
     - cobra_shot,if=cooldown.bestial_wrath.remains>gcd
 
   trinkets:
-   #TODO: add trinkets
+    - use_item,name=light_company_guidon,if=cooldown.bestial_wrath.ready|fight_remains<21
+    - use_item,name=void_execution_mandate,if=cooldown.bestial_wrath.ready|fight_remains<21
+    - use_item,name=algethar_puzzle_box,if=cooldown.bestial_wrath.remains<2|fight_remains<23
+    - use_item,name=emberwing_feather,if=cooldown.bestial_wrath.ready|fight_remains<16
+    - use_item,name=freightrunners_flask,if=cooldown.bestial_wrath.ready|fight_remains<16
+    - use_item,name=sealed_chaos_urn,if=cooldown.bestial_wrath.ready|fight_remains<21
+    - use_item,name=evercollapsing_void_fissure,if=cooldown.bestial_wrath.ready|fight_remains<11
+    - use_item,name=rangercaptains_iridescent_insignia
+    - use_item,name=void_stalkers_contract
+    - use_item,name=latchs_crooked_hook
