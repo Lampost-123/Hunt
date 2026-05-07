@@ -78,7 +78,7 @@ lists:
     - call_action_list,name=cleave,if=!talent.black_arrow&(active_enemies>2|talent.beast_cleave&active_enemies>1)
 
   pet:
-    - revive_pet,range_check=none,if=pet.dead
+    - revive_pet,range_check=none,if=!pet.alive&pet.exists
     - call_pet_1,range_check=none,if=!pet.alive&config.pet_slot=1
     - call_pet_2,range_check=none,if=!pet.alive&config.pet_slot=2
     - call_pet_3,range_check=none,if=!pet.alive&config.pet_slot=3
