@@ -1,10 +1,9 @@
-
-
 spec: 253
 version: 3
 name: "LPBM V3"
 author: "LP"
 description: "V3"
+entry: main
 
 config:
   survival_of_the_fittest_hp_pct:
@@ -156,7 +155,7 @@ lists:
     - call_action_list,name=sanity_checks
     - call_action_list,name=auto_target
 
-    - return,if=player.exists
+    #- return,if=player.exists
 
     - revive_pet,range_check=none,if=!pet.alive&pet.exists
 
@@ -182,20 +181,14 @@ lists:
     - war_stomp,if=interrupt.stun.aoe.check
     - bull_rush,if=interrupt.stun.aoe.check
     - tail_swipe,if=interrupt.stun.aoe.check
-    - return,if=target.combat
+
     - call_action_list,name=auto_purge_enrage,if=config.auto_enrage
-
     - call_action_list,name=auto_heal
-
     #- misdirection,target=tank1,if=!player.inraid&combat.time<3
-
-    
-
     - call_action_list,name=auto_hunters_mark,if=config.auto_hunters_mark
-
+    - return,if=auto_combat.target
     - call_action_list,name=cds
     - call_action_list,name=trinkets
-
     - call_action_list,name=drst,if=talent.black_arrow&(enemies_around_target<2|!talent.beast_cleave&enemies_around_target<3)
     - call_action_list,name=drcleave,if=talent.black_arrow&(enemies_around_target>2|talent.beast_cleave&enemies_around_target>1)
     - call_action_list,name=st,if=!talent.black_arrow&(enemies_around_target<2|!talent.beast_cleave&enemies_around_target<3)
