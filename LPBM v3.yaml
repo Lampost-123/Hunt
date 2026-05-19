@@ -1,0 +1,206 @@
+
+
+spec: 253
+version: 3
+name: "LPBM V3"
+author: "LP"
+description: "V3"
+
+config:
+  survival_of_the_fittest_hp_pct:
+    label: "Survival of the Fittest"
+    type: slider
+    min: 0
+    max: 100
+    default: 50
+
+  aspect_of_the_turtle_hp_pct:
+    label: "Aspect of the Turtle"
+    type: slider
+    min: 0
+    max: 100
+    default: 30
+
+  exhilaration_hp_pct:
+    label: "Exhilaration"
+    type: slider
+    min: 0
+    max: 100
+    default: 50
+
+  mend_pet_high_prio_hp_pct:
+    section: "Pet Management"
+    label: "Mend Pet High Priority"
+    type: slider
+    min: 0
+    max: 100
+    default: 40
+
+  mend_pet_low_prio_hp_pct:
+    section: "Pet Management"
+    label: "Mend Pet Low Priority"
+    type: slider
+    min: 0
+    max: 100
+    default: 80
+
+  call_pet_number:
+    section: "Pet Management"
+    label: "Call Pet Number"
+    type: slider
+    min: 1
+    max: 5
+    default: 1
+
+  auto_hunters_mark:
+    section: "Utility"
+    label: "Auto Hunter's Mark (no allied mark on nameplates)"
+    type: checkbox
+    default: true
+
+  auto_enrage:
+    section: "Utility"
+    label: "Auto Tranquilizing Shot (enrage & magic — mouseover + target)"
+    type: checkbox
+    default: true
+
+variables:
+  wt_focus_ok: "cooldown.wild_thrash.remains>gcd+execute_time|focus>=65"
+  cs_focus_ok: "cooldown.kill_command.remains>gcd+execute_time|focus>=65|buff.natures_ally.down"
+  pet_near_target: "pet.nearby_enemies>=1"
+lists:
+
+  trinkets:
+    - use_item,name=light_company_guidon,if=cooldown.bestial_wrath.ready|fight_remains<21
+    - use_item,name=void_execution_mandate,if=cooldown.bestial_wrath.ready|fight_remains<21
+    - use_item,name=algethar_puzzle_box,if=cooldown.bestial_wrath.remains<2|fight_remains<23
+    - use_item,name=emberwing_feather,if=cooldown.bestial_wrath.ready|fight_remains<16
+    - use_item,name=freightrunners_flask,if=cooldown.bestial_wrath.ready|fight_remains<16
+    - use_item,name=sealed_chaos_urn,if=cooldown.bestial_wrath.ready|fight_remains<21
+    - use_item,name=evercollapsing_void_fissure,if=cooldown.bestial_wrath.ready|fight_remains<11
+    - use_item,name=rangercaptains_iridescent_insignia
+    - use_item,name=void_stalkers_contract
+    - use_item,name=latchs_crooked_hook
+    - trinket_1,if=trinket_1.sync
+    - trinket_2,if=trinket_2.sync
+
+
+  cds:
+    
+    - berserking,if=cooldown.bestial_wrath.ready|fight_remains<13
+    - blood_fury,if=cooldown.bestial_wrath.ready|fight_remains<16
+    - ancestral_call,if=cooldown.bestial_wrath.ready|fight_remains<16
+    - fireblood,if=cooldown.bestial_wrath.ready|fight_remains<9
+  st:
+    - barbed_shot,if=cooldown.bestial_wrath.remains<gcd
+    - bestial_wrath
+    - wild_thrash,if=enemies_around_target>1
+    - kill_command,if=cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react|talent.pack_leader.rank<4
+    - barbed_shot,if=(focus<75|cooldown.barbed_shot.full_recharge_time<gcd)&!talent.serpentine_strikes|talent.serpentine_strikes
+    - cobra_shot,if=cooldown.bestial_wrath.remains>gcd
+
+
+  cleave:
+    - barbed_shot,if=cooldown.barbed_shot.full_recharge_time<gcd
+    - wild_thrash,if=talent.beast_cleave
+    - bestial_wrath,if=!prev_gcd.1.wild_thrash
+    - wild_thrash,if=!talent.beast_cleave
+    - kill_command,if=buff.natures_ally.react|talent.master_handler&enemies_around_target>3
+    - cobra_shot,if=cooldown.wild_thrash.remains>gcd&buff.hogstrider.up&enemies_around_target<4
+    - barbed_shot
+    - cobra_shot,if=talent.beast_cleave&cooldown.wild_thrash.remains>gcd|!talent.beast_cleave
+
+
+  drst:
+    - black_arrow,if=buff.beast_cleave.remains<gcd&enemies_around_target>1
+    - barbed_shot,if=(talent.bloody_frenzy&talent.snakeskin_quiver&talent.jagged_wounds)&cooldown.bestial_wrath.remains<2*gcd
+    - bestial_wrath,if=buff.bestial_wrath.down&pet.nearby_enemies>=1
+    - black_arrow,if=buff.withering_fire.up&cooldown.kill_command.full_recharge_time>gcd
+    - kill_command,if=cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react
+    - wailing_arrow,if=buff.bestial_wrath.up&!cooldown.kill_command.ready&!cooldown.black_arrow.ready
+    - wailing_arrow,if=buff.withering_fire.remains<action.wailing_arrow.execute_time+2*gcd|time_to_die<action.wailing_arrow.execute_time+gcd
+    - cobra_shot,if=talent.killer_cobra&buff.bestial_wrath.up&cooldown.barbed_shot.charges_fractional<1.4
+    - black_arrow
+    - barbed_shot
+    - wailing_arrow,if=buff.bestial_wrath.up
+    - cobra_shot,if=var.cs_focus_ok
+
+
+  drcleave:
+    - black_arrow,if=buff.beast_cleave.remains<gcd&cooldown.bestial_wrath.remains<gcd&enemies_around_target>1
+    - bestial_wrath,if=buff.beast_cleave.remains&pet.nearby_enemies>1
+    - wild_thrash
+    - kill_command,if=cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react
+    - barbed_shot,if=cooldown.barbed_shot.full_recharge_time<1*gcd
+    - black_arrow,if=buff.withering_fire.up
+    - wailing_arrow,if=buff.bestial_wrath.up&!cooldown.kill_command.ready&!cooldown.black_arrow.ready
+    - wailing_arrow,if=buff.withering_fire.remains<action.wailing_arrow.execute_time+gcd|time_to_die<action.wailing_arrow.execute_time+gcd
+    - barbed_shot
+    - black_arrow
+    - wailing_arrow,if=buff.bestial_wrath.up
+    - cobra_shot,if=var.wt_focus_ok
+
+
+  auto_hunters_mark:
+    - hunters_mark,if=nameplates.debuff.hunters_mark.count=0&(target.dummy|(target.time_to_die>15&(target.boss|target.classification>3|target.npcid=243208)))
+
+
+  auto_purge_enrage:
+    - return,if=!config.auto_enrage
+    - tranquilizing_shot.mouseover,range_check=mouseover,if=mouseover.enemy&(mouseover.purgeable.enrage|mouseover.purgeable.magic)
+    - tranquilizing_shot,if=target.enemy&(target.purgeable.enrage|target.purgeable.magic)
+
+
+  main:
+    - call_action_list,name=spell_queue
+    - call_action_list,name=sanity_checks
+    - call_action_list,name=auto_target
+
+    - return,if=player.exists
+
+    - revive_pet,range_check=none,if=!pet.alive&pet.exists
+
+    - 883,range_check=none,if=!pet.exists&config.call_pet_number=1
+    - 83242,range_check=none,if=!pet.exists&config.call_pet_number=2
+    - 83243,range_check=none,if=!pet.exists&config.call_pet_number=3
+    - 83244,range_check=none,if=!pet.exists&config.call_pet_number=4
+    - 83245,range_check=none,if=!pet.exists&config.call_pet_number=5
+
+    - return,if=auto_combat.player
+
+    - survival_of_the_fittest,range_check=none,if=health.pct<=config.survival_of_the_fittest_hp_pct
+    - aspect_of_the_turtle,if=health.pct<=config.aspect_of_the_turtle_hp_pct
+    - mend_pet,if=pet.health.pct<=config.mend_pet_high_prio_hp_pct&pet.alive&pet.exists
+    - exhilaration,range_check=none,if=health.pct<=config.exhilaration_hp_pct
+
+    - counter_shot,if=interrupt.target.check
+    - counter_shot.mouseover,if=interrupt.mouseover.check
+    - counter_shot.focus,if=interrupt.focus.check
+    - intimidation,if=interrupt.cc.check
+    - quaking_palm,if=interrupt.cc.check
+    - haymaker,if=interrupt.cc.check
+    - war_stomp,if=interrupt.stun.aoe.check
+    - bull_rush,if=interrupt.stun.aoe.check
+    - tail_swipe,if=interrupt.stun.aoe.check
+    - return,if=target.combat
+    - call_action_list,name=auto_purge_enrage,if=config.auto_enrage
+
+    - call_action_list,name=auto_heal
+
+    #- misdirection,target=tank1,if=!player.inraid&combat.time<3
+
+    
+
+    - call_action_list,name=auto_hunters_mark,if=config.auto_hunters_mark
+
+    - call_action_list,name=cds
+    - call_action_list,name=trinkets
+
+    - call_action_list,name=drst,if=talent.black_arrow&(enemies_around_target<2|!talent.beast_cleave&enemies_around_target<3)
+    - call_action_list,name=drcleave,if=talent.black_arrow&(enemies_around_target>2|talent.beast_cleave&enemies_around_target>1)
+    - call_action_list,name=st,if=!talent.black_arrow&(enemies_around_target<2|!talent.beast_cleave&enemies_around_target<3)
+    - call_action_list,name=cleave,if=!talent.black_arrow&(enemies_around_target>2|talent.beast_cleave&enemies_around_target>1)
+
+    - mend_pet,if=pet.health.pct<=config.mend_pet_low_prio_hp_pct&pet.alive&pet.exists
+
+
