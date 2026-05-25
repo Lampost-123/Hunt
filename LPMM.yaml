@@ -1,101 +1,233 @@
+# =============================================================================
+# Hunter Marksmanship - Spec ID 254
+# Midnight SimC default APL (hunter_marksmanship.simc)
+# =============================================================================
+
+version: 3
 spec: 254
-name: "LP - Marksmanship Hunter 1.1 (Sentinel)"
-
-movement_allowed: true
-
-spell_overrides:
-  aimed_shot: "(!player.moving|buff.lock_and_load.up)&!player.casting.19434&!player.channeling&!prev_gcd.1.aimed_shot&(lastcast.aimed_shot>1.5|lastcast.arcane_shot<lastcast.aimed_shot|lastcast.multishot<lastcast.aimed_shot)"
-  rapid_fire: "!player.casting.19434&(lastcast.aimed_shot>=1|lastcast.aimed_shot>=lastcast.arcane_shot|lastcast.aimed_shot>=lastcast.multishot)"
-  steady_shot: "!player.casting.56641"
+entry: main
 
 config:
-  cleave_threshold:
-    section: "Cleave / AOE Targets"
+  exhilaration_hp_pct:
+    label: "Exhilaration HP%"
     type: slider
-    min: 2
-    max: 8
-    value: 3
-
-  smart_defensives:
-    section: "Defensives"
-    type: checkbox
-    value: true
-  auto_defense:
-    section: "Defensives"
-    type: checkbox
-    value: true
-
+    min: 0
+    max: 100
+    default: 40
+  survival_of_the_fittest_hp_pct:
+    label: "Survival of the Fittest HP%"
+    type: slider
+    min: 0
+    max: 100
+    default: 50
 
 variables:
-  use_aoe: state.aoe&active_enemies>cfg.cleave_threshold
-
-  trueshot_ready: (!talent.bullseye)|(fight_remains>130)|(buff.bullseye.stack=8)|(fight_remains<25)
-
-  trueshot_bulletstorm_ok: buff.bulletstorm.up|fight_remains<20
-
-  precise_shots_expected: buff.precise_shots.up|player.casting.19434|(player.channeling&talent.no_scope)|(lastcast.aimed_shot<1.5&lastcast.aimed_shot<lastcast.arcane_shot)
-
-  cd_used: prev_gcd.1.volley|prev_gcd.1.trueshot|(lastcast.volley<lastcast.aimed_shot&lastcast.volley<lastcast.rapid_fire)|(lastcast.trueshot<lastcast.aimed_shot&lastcast.trueshot<lastcast.rapid_fire)
+  trueshot_ready: "!talent.bullseye|fight_remains>cooldown.trueshot.duration+10|buff.bullseye.stack=buff.bullseye.max_stack|fight_remains<25|combat.time<10"
 
 lists:
+  defensives:
+    - exhilaration,range_check=none,if=health.pct<=config.exhilaration_hp_pct
+    - survival_of_the_fittest,range_check=none,if=health.pct<=config.survival_of_the_fittest_hp_pct
+
+  # ==========================================================================
+  # Cooldowns
+  # ==========================================================================
+  cds:
+    # Original: invoke_external_buff,name=power_infusion,if=buff.trueshot.remains>12|fight_remains<13
+    # invoke_external_buff NOT supported
+
+    # Original: berserking,if=buff.trueshot.up|fight_remains<13
+    - berserking,if=buff.trueshot.up|fight_remains<13
+    # Original: blood_fury,if=buff.trueshot.up|cooldown.trueshot.remains>30|fight_remains<16
+    - blood_fury,if=buff.trueshot.up|cooldown.trueshot.remains>30|fight_remains<16
+    # Original: ancestral_call,if=buff.trueshot.up|cooldown.trueshot.remains>30|fight_remains<16
+    - ancestral_call,if=buff.trueshot.up|cooldown.trueshot.remains>30|fight_remains<16
+    # Original: fireblood,if=buff.trueshot.up|cooldown.trueshot.remains>30|fight_remains<9
+    - fireblood,if=buff.trueshot.up|cooldown.trueshot.remains>30|fight_remains<9
+    # Original: lights_judgment,if=buff.trueshot.down
+    - lights_judgment,if=buff.trueshot.down
+    # Original: potion,if=buff.trueshot.up&(buff.bloodlust.up|fight_remains<120-30*talent.calling_the_shots)|fight_remains<31
+    # potion NOT supported
+
+  # ==========================================================================
+  # Trinkets (SimC actions.trinkets — use_items expanded per slot)
+  # ==========================================================================
+  trinkets:
+    # Line 1: stat/use-buff trinket CD aligns with Trueshot; TS overlap or Puzzle pre-pull
+    - trinket_1,if=trinket_1.sync&trinket_1.has_stat&(trinket_1.cd%%cooldown.trueshot.duration=0)&(buff.trueshot.remains>14|(trinket_1.id=193701&var.trueshot_ready&cooldown.trueshot.remains<5))
+    - trinket_2,if=trinket_2.sync&trinket_2.has_stat&(trinket_2.cd%%cooldown.trueshot.duration=0)&(buff.trueshot.remains>14|(trinket_2.id=193701&var.trueshot_ready&cooldown.trueshot.remains<5))
+    # Line 2: both slots are aligned buff trinkets — paired use (approx.: other slot on CD / TS spacing)
+    - trinket_1,if=trinket_1.sync&trinket_1.has_stat&trinket_2.has_stat&(trinket_2.cd%%cooldown.trueshot.duration=0)&((buff.trueshot.remains>14&!trinket_2.ready)|(cooldown.trueshot.remains>20&trinket_2.cd<=cooldown.trueshot.remains))
+    - trinket_2,if=trinket_2.sync&trinket_2.has_stat&trinket_1.has_stat&(trinket_1.cd%%cooldown.trueshot.duration=0)&((buff.trueshot.remains>14&!trinket_1.ready)|(cooldown.trueshot.remains>20&trinket_1.cd<=cooldown.trueshot.remains))
+    # Line 3: generic on-use buff trinket with Trueshot or end of fight
+    - trinket_1,if=trinket_1.sync&trinket_1.has_stat&(buff.trueshot.remains>14|(buff.trueshot.up&fight_remains<cooldown.trueshot.remains+15)|fight_remains<21)
+    - trinket_2,if=trinket_2.sync&trinket_2.has_stat&(buff.trueshot.remains>14|(buff.trueshot.up&fight_remains<cooldown.trueshot.remains+15)|fight_remains<21)
+    # Line 4: on-use damage trinket — outside Trueshot window
+    - trinket_1,if=trinket_1.sync&!trinket_1.has_stat&cooldown.trueshot.remains>20
+    - trinket_2,if=trinket_2.sync&!trinket_2.has_stat&cooldown.trueshot.remains>20
+
+  # ==========================================================================
+  # Dark Ranger AOE (3+ targets) — SimC actions.draoe
+  # ==========================================================================
+  draoe:
+    # aimed_shot,target_if=max:debuff.spotters_mark.up|max_prio_damage,if=buff.trick_shots.remains>cast_time&full_recharge_time<gcd+cast_time
+    - aimed_shot,if=buff.trick_shots.remains>action.aimed_shot.cast_time&cooldown.aimed_shot.full_recharge_time<gcd+action.aimed_shot.cast_time
+    # black_arrow,target_if=max:debuff.spotters_mark.down|action.aimed_shot.in_flight_to_target|max_prio_damage,if=buff.precise_shots.up
+    - black_arrow,if=buff.precise_shots.up
+    # multishot,target_if=max:debuff.spotters_mark.down|action.aimed_shot.in_flight_to_target|max_prio_damage,if=buff.precise_shots.up&!talent.aspect_of_the_hydra&!prev_gcd.1.multishot|buff.trick_shots.down
+    - multishot,if=buff.precise_shots.up&!talent.aspect_of_the_hydra&!prev_gcd.1.multishot|buff.trick_shots.down
+    # trueshot,if=!buff.double_tap.up&variable.trueshot_ready
+    - trueshot,if=!buff.double_tap.up&var.trueshot_ready
+    # rapid_fire,if=buff.trick_shots.remains>execute_time&(buff.bulletstorm.remains<action.aimed_shot.execute_time|talent.unload)
+    - rapid_fire,if=buff.trick_shots.remains>action.rapid_fire.execute_time&(buff.bulletstorm.remains<action.aimed_shot.execute_time|talent.unload)
+    # wailing_arrow,if=!cooldown.black_arrow.ready
+    - wailing_arrow,if=!cooldown.black_arrow.ready
+    # volley,if=!buff.double_tap.up
+    - volley,if=!buff.double_tap.up
+    # aimed_shot,target_if=max:debuff.spotters_mark.up|max_prio_damage,if=buff.trick_shots.remains>cast_time
+    - aimed_shot,if=buff.trick_shots.remains>action.aimed_shot.cast_time
+    # multishot,target_if=max:debuff.spotters_mark.down|action.aimed_shot.in_flight_to_target|max_prio_damage,if=buff.precise_shots.up
+    - multishot,if=buff.precise_shots.up
+    - explosive_shot
+    - steady_shot,ignore_movement=true
+
+  # ==========================================================================
+  # Dark Ranger ST — SimC actions.drst
+  # ==========================================================================
+  drst:
+    # black_arrow,target_if=max:debuff.spotters_mark.down|action.aimed_shot.in_flight_to_target|max_prio_damage,if=buff.precise_shots.up
+    - black_arrow,if=buff.precise_shots.up
+    # aimed_shot,if=buff.trueshot.up&buff.precise_shots.down&cooldown.black_arrow.ready|full_recharge_time<gcd+cast_time
+    - aimed_shot,if=(buff.trueshot.up&buff.precise_shots.down&cooldown.black_arrow.ready)|(cooldown.aimed_shot.full_recharge_time<gcd+action.aimed_shot.cast_time)
+    # trueshot,if=!buff.double_tap.up&variable.trueshot_ready
+    - trueshot,if=!buff.double_tap.up&var.trueshot_ready
+    - rapid_fire
+    # wailing_arrow,if=!cooldown.black_arrow.ready
+    - wailing_arrow,if=!cooldown.black_arrow.ready
+    # arcane_shot,target_if=max:debuff.spotters_mark.down|action.aimed_shot.in_flight_to_target|max_prio_damage,if=buff.precise_shots.up
+    - arcane_shot,if=buff.precise_shots.up
+    # volley,if=!buff.double_tap.up
+    - volley,if=!buff.double_tap.up
+    # aimed_shot,target_if=max:debuff.spotters_mark.up|max_prio_damage
+    - aimed_shot
+    - explosive_shot
+    - steady_shot,ignore_movement=true
+
+  # ==========================================================================
+  # Sentinel AOE (3+ targets) — SimC actions.sentaoe
+  # ==========================================================================
+  sentaoe:
+    # multishot,target_if=max:debuff.sentinels_mark.down|action.aimed_shot.in_flight_to_target,if=buff.precise_shots.up&!talent.aspect_of_the_hydra&!prev_gcd.1.multishot|buff.trick_shots.down
+    - multishot,if=buff.precise_shots.up&!talent.aspect_of_the_hydra&!prev_gcd.1.multishot|buff.trick_shots.down
+    # rapid_fire,if=(buff.bulletstorm.remains<action.aimed_shot.execute_time|buff.bulletstorm.stack<18|talent.unload&target.health.pct<20)
+    - rapid_fire,if=(buff.bulletstorm.remains<action.aimed_shot.execute_time|buff.bulletstorm.stack<18|talent.unload&target.health.pct<20)
+    # trueshot,if=!buff.double_tap.up&variable.trueshot_ready
+    - trueshot,if=!buff.double_tap.up&var.trueshot_ready
+    # volley,if=!buff.double_tap.up
+    - volley,if=!buff.double_tap.up&!cooldown.trueshot.ready
+    # explosive_shot,if=talent.shrapnel_shot&buff.trueshot.down&buff.lock_and_load.down&cooldown.aimed_shot.charges_fractional<=1.1
+    - explosive_shot,if=talent.shrapnel_shot&buff.trueshot.down&buff.lock_and_load.down&cooldown.aimed_shot.charges_fractional<=1.1
+    # aimed_shot,target_if=max:debuff.sentinels_mark.up|max_prio_damage,if=buff.trick_shots.remains>cast_time
+    - aimed_shot,if=buff.trick_shots.remains>action.aimed_shot.cast_time
+    - moonlight_chakram
+    # rapid_fire,if=buff.trick_shots.remains>execute_time
+    - rapid_fire,if=buff.trick_shots.remains>action.rapid_fire.execute_time
+    # multishot,target_if=max:debuff.spotters_mark.down|action.aimed_shot.in_flight_to_target|max_prio_damage,if=buff.precise_shots.up&talent.windrunner_quiver
+    - multishot,if=buff.precise_shots.up&talent.windrunner_quiver
+    - explosive_shot
+    - steady_shot,ignore_movement=true
+
+  # ==========================================================================
+  # Sentinel ST
+  # ==========================================================================
+  sentst:
+    - aimed_shot,if=buff.lock_and_load.up|prev_gcd.1.explosive_shot
+    # Arcane after every Aimed — spend Precise Shots
+    - arcane_shot,interrupt=true,if=(prev_gcd.1.aimed_shot|player.casting.19434)&buff.precise_shots.up
+    # Rapid Fire — activate/maintain Bulletstorm (avoid Aimed without it)
+    - rapid_fire,if=buff.bulletstorm.down|buff.bulletstorm.remains<action.aimed_shot.execute_time
+    # Trueshot if Double Tap isn't up
+    - trueshot,if=!buff.double_tap.up
+    # Volley if Double Tap isn't up
+    - volley,if=!buff.double_tap.up&!cooldown.trueshot.ready
+    # Explosive outside Trueshot when no Aimed charges
+    - explosive_shot,if=buff.trueshot.down&cooldown.aimed_shot.charges_fractional<1
+    # Aimed on cooldown (requires Bulletstorm)
+    - aimed_shot,if=buff.bulletstorm.up&cooldown.aimed_shot.ready
+    # Fillers
+    - moonlight_chakram
+    - rapid_fire
+    - arcane_shot,if=buff.precise_shots.up
+    - explosive_shot
+    - steady_shot,ignore_movement=true
+
+  # ==========================================================================
+  # Precombat — SimC actions.precombat
+  # ==========================================================================
+  precombat:
+    # Original: use_item,name=algethar_puzzle_box
+    - trinket_1,if=trinket_1.id=193701&trinket_1.usable
+    - trinket_2,if=trinket_2.id=193701&trinket_2.usable
+    # Original: summon_pet,if=talent.unbreakable_bond
+    - call_pet_1,if=talent.unbreakable_bond
+    # Original: aimed_shot,if=active_enemies<3|talent.black_arrow&talent.headshot
+    # - aimed_shot,if=active_enemies<3|talent.black_arrow&talent.headshot
+    # - steady_shot
+
+  # ==========================================================================
+  # MAIN
+  # ==========================================================================
   main:
+    # _shared.yaml lists
     - call_action_list,name=spell_queue
     - call_action_list,name=sanity_checks
-    - call_action_list,name=auto_target_ranged
-    - call_action_list,name=defensives,if=config.smart_defensives
-    - call_action_list,name=lp_defensives,if=config.auto_defense
-    - return,if=!target.valid&!((config.auto_combat.has(1)&target.quest_mob&target.enemy&!target.dead)|(config.auto_combat.has(2)&target.combat&target.enemy&!target.dead)|(config.auto_combat.has(3)&target.targeting_party&target.enemy&!target.dead))
-    - return,if=!target.valid&config.auto_combat.has(0)
-    - return,if=!target.valid|target.dead|!target.attackable
-    - call_action_list,name=interrupts
-    - return,if=player.channeling
-    - call_action_list,name=cooldowns,if=!player.casting&!player.channeling
-    - call_action_list,name=trinkets,if=!player.casting&!player.channeling
-    - call_action_list,name=sentinel_aoe,if=!player.casting&!player.channeling&var.use_aoe
-    - call_action_list,name=sentinel_st,if=!player.casting&!player.channeling&!var.use_aoe
+    - call_action_list,name=auto_target
 
-  lp_defensives:
-    - survival_of_the_fittest.player,range_check=none,if=player.health.pct<65&!buff.survival_of_the_fittest.up
-    - exhilaration.player,range_check=none,if=player.health.pct<50&!buff.survival_of_the_fittest.up
-    - aspect_of_the_turtle.player,range_check=none,if=player.health.pct<20&!buff.survival_of_the_fittest.up
+    - call_action_list,name=precombat,if=!player.combat
 
-  cooldowns:
-    - berserking,if=buff.trueshot.up|fight_remains<13
-    - blood_fury,if=buff.trueshot.up|(cooldown.trueshot.remains>30)|(fight_remains<16)
-    - fireblood,if=buff.trueshot.up|(cooldown.trueshot.remains>30)|(fight_remains<9)
-    - ancestral_call,if=buff.trueshot.up|(cooldown.trueshot.remains>30)|(fight_remains<16)
-    - lights_judgment,if=buff.trueshot.down
+    # Combat Check
+    - return,if=auto_combat.player
 
-  trinkets:
-    - trinket_1,if=state.cds&trinket_1.ready&buff.trueshot.up&!player.casting&!player.channeling
-    - trinket_2,if=state.cds&trinket_2.ready&buff.trueshot.up&!player.casting&!player.channeling
+    # Defensives
+    - call_action_list,name=defensives
 
-  sentinel_st:
-    - one_button_assist_lookup,if=state.cds&!buff.double_tap.up&!prev_gcd.1.trueshot&one_button_assistant.volley&cooldown.aimed_shot.charges_fractional>=1
-    - trueshot,if=state.cds&!prev_gcd.1.volley&!var.cd_used&!buff.double_tap.up&var.trueshot_bulletstorm_ok&cooldown.aimed_shot.charges_fractional>=1
-    - arcane_shot,interrupt=true,ignore_queue=true,if=var.precise_shots_expected|player.casting.19434
-    - moonlight_chakram,override=trueshot,if=buff.moonlight_chakram.up&buff.trueshot.up&player.moving&talent.stalk_and_strike.enabled
-    - rapid_fire,if=!var.precise_shots_expected&buff.precise_shots.down&(buff.bulletstorm.remains<2.5|buff.bulletstorm.down)
-    - rapid_fire,if=talent.unload&(talent.no_scope&buff.bulletstorm.stack<10|target.health.pct<20)
-    - aimed_shot,if=!var.precise_shots_expected
-    - moonlight_chakram,override=trueshot,if=buff.moonlight_chakram.up
-    - rapid_fire,if=!var.precise_shots_expected&buff.precise_shots.down
-    - steady_shot,if=!player.moving
-    - steady_shot,ignore_movement=true,if=player.moving.time>0.5
+    # Interrupts
+    - counter_shot,if=interrupt.target.check
+    - counter_shot.mouseover,if=interrupt.mouseover.check
+    - counter_shot.focus,if=interrupt.focus.check
+    # CC interrupt (when counter_shot is on CD)
+    - intimidation,if=interrupt.cc.check
+    # Racial Interrupts
+    - quaking_palm,if=interrupt.cc.check
+    - haymaker,if=interrupt.cc.check
+    - war_stomp,if=interrupt.stun.aoe.check
+    - bull_rush,if=interrupt.stun.aoe.check
 
-  sentinel_aoe:
-    - trueshot,if=state.cds&!prev_gcd.1.volley&!var.cd_used&!buff.double_tap.up&var.trueshot_ready&var.trueshot_bulletstorm_ok&cooldown.aimed_shot.charges_fractional>=1
-    - multishot,if=!talent.aspect_of_the_hydra&(var.precise_shots_expected|buff.trick_shots.down)
-    - arcane_shot,interrupt=true,ignore_queue=true,if=talent.aspect_of_the_hydra&var.precise_shots_expected|player.casting.19434
-    - moonlight_chakram,override=trueshot,if=buff.moonlight_chakram.up&buff.trueshot.up&player.moving&talent.stalk_and_strike.enabled
-    - rapid_fire,if=!var.precise_shots_expected&buff.precise_shots.down&(buff.bulletstorm.remains<2.5|buff.bulletstorm.down)
-    - one_button_assist_lookup,if=state.cds&!buff.double_tap.up&!prev_gcd.1.trueshot&one_button_assistant.volley&cooldown.aimed_shot.charges_fractional>=1
-    - aimed_shot,if=!var.precise_shots_expected
-    - moonlight_chakram,override=trueshot,if=buff.moonlight_chakram.up
-    - rapid_fire,if=!var.precise_shots_expected&buff.precise_shots.down
-    - steady_shot,if=!player.moving
-    - steady_shot,ignore_movement=true,if=player.moving.time>0.6
+    - call_action_list,name=auto_heal
 
-  interrupts:
-    - counter_shot,if=target.casting.interruptible
-    - intimidation,if=target.casting.interruptible&!cooldown.counter_shot.ready
+    # Misdirection on tank at M+ pull start
+    #- misdirection,target=tank1,if=!player.inraid&combat.time<3
+
+    # Target Check
+    - return,if=auto_combat.target
+
+    # Original: auto_shot → DELETED
+
+    # Cooldowns
+    - call_action_list,name=cds
+
+    # Trinkets — SimC actions.trinkets (see lists.trinkets)
+    - call_action_list,name=trinkets
+
+     # Dark Ranger AOE (3+ targets)
+    # Original: call_action_list,name=draoe,if=enemies_around_target>2&talent.trick_shots&hero_tree.dark_ranger
+    - call_action_list,name=draoe,if=enemies_around_target>2&talent.trick_shots&hero_tree.dark_ranger
+    # Sentinel AOE (3+ targets)
+    # Original: call_action_list,name=sentaoe,if=enemies_around_target>2&talent.trick_shots&hero_tree.sentinel
+    - call_action_list,name=sentaoe,if=enemies_around_target>2&talent.trick_shots&hero_tree.sentinel
+    # Dark Ranger ST
+    # Original: call_action_list,name=drst,if=hero_tree.dark_ranger
+    - call_action_list,name=drst,if=hero_tree.dark_ranger
+    # Sentinel ST
+    # Original: call_action_list,name=sentst,if=hero_tree.sentinel
+    - call_action_list,name=sentst,if=hero_tree.sentinel

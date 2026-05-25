@@ -66,7 +66,9 @@ config:
 variables:
   wt_focus_ok: "cooldown.wild_thrash.remains>gcd+execute_time|focus>=65"
   cs_focus_ok: "cooldown.kill_command.remains>gcd+execute_time|focus>=65|buff.natures_ally.down"
-  pet_near_target: "pet.nearby_enemies>=1"
+  pet_bw_ok: "pet.nearby_enemies>=1"  #pet.attacking_target&
+
+  plbuff: "player.buff.remains(472325)|player.buff.remains(472324)|player.buff.remains(471878)"
 lists:
 
   trinkets:
@@ -92,19 +94,20 @@ lists:
     - fireblood,if=cooldown.bestial_wrath.ready|fight_remains<9
   st:
     - barbed_shot,if=cooldown.bestial_wrath.remains<gcd
-    - bestial_wrath
-    - wild_thrash,if=enemies_around_target>1
-    - kill_command,if=cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react|talent.pack_leader.rank<4
+    - bestial_wrath,if=var.pet_bw_ok
+    - wild_thrash,if=pet.attacking_target&pet.nearby_enemies>1
+    - kill_command,if=cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react|plbuff
     - barbed_shot,if=(focus<75|cooldown.barbed_shot.full_recharge_time<gcd)&!talent.serpentine_strikes|talent.serpentine_strikes
     - cobra_shot,if=cooldown.bestial_wrath.remains>gcd
 
 
   cleave:
+    - kill_command,if=(plbuff|(cooldown.kill_command.full_recharge_time<gcd&!cooldown.wild_thrash.ready))
     - barbed_shot,if=cooldown.barbed_shot.full_recharge_time<gcd
-    - wild_thrash,if=talent.beast_cleave
-    - bestial_wrath,if=!prev_gcd.1.wild_thrash
-    - wild_thrash,if=!talent.beast_cleave
-    - kill_command,if=buff.natures_ally.react|talent.master_handler&enemies_around_target>3
+    - wild_thrash,if=talent.beast_cleave&var.pet_bw_ok
+    - bestial_wrath,if=!prev_gcd.1.wild_thrash&!cooldown.wild_thrash.ready&var.pet_bw_ok
+    - wild_thrash,if=!talent.beast_cleave&var.pet_bw_ok
+    - kill_command,if=buff.natures_ally.react|talent.master_handler&(enemies_around_target>3)|plbuff
     - cobra_shot,if=cooldown.wild_thrash.remains>gcd&buff.hogstrider.up&enemies_around_target<4
     - barbed_shot
     - cobra_shot,if=talent.beast_cleave&cooldown.wild_thrash.remains>gcd|!talent.beast_cleave
@@ -113,7 +116,7 @@ lists:
   drst:
     - black_arrow,if=buff.beast_cleave.remains<gcd&enemies_around_target>1
     - barbed_shot,if=(talent.bloody_frenzy&talent.snakeskin_quiver&talent.jagged_wounds)&cooldown.bestial_wrath.remains<2*gcd
-    - bestial_wrath,if=buff.bestial_wrath.down&pet.nearby_enemies>=1
+    - bestial_wrath,if=cooldown.bestial_wrath.ready&buff.bestial_wrath.down&var.pet_bw_ok
     - black_arrow,if=buff.withering_fire.up&cooldown.kill_command.full_recharge_time>gcd
     - kill_command,if=cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react
     - wailing_arrow,if=buff.bestial_wrath.up&!cooldown.kill_command.ready&!cooldown.black_arrow.ready
@@ -127,8 +130,8 @@ lists:
 
   drcleave:
     - black_arrow,if=buff.beast_cleave.remains<gcd&cooldown.bestial_wrath.remains<gcd&enemies_around_target>1
-    - bestial_wrath,if=buff.beast_cleave.remains&pet.nearby_enemies>1
-    - wild_thrash
+    - bestial_wrath,if=buff.beast_cleave.remains&var.pet_bw_ok
+    - wild_thrash,if=var.pet_bw_ok
     - kill_command,if=cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react
     - barbed_shot,if=cooldown.barbed_shot.full_recharge_time<1*gcd
     - black_arrow,if=buff.withering_fire.up
@@ -141,7 +144,7 @@ lists:
 
 
   auto_hunters_mark:
-    - hunters_mark,if=nameplates.debuff.hunters_mark.count=0&(target.dummy|(target.time_to_die>15&(target.boss|target.classification>3|target.npcid=243208)))
+    - hunters_mark,if=nameplates.debuff.hunters_mark.count=0&debuff.hunters_mark.down&target.health.pct>25&target.time_to_die>15&target.time_to_die<9999&(target.boss|target.classification>3|target.npcid=243208|(target.dummy&target.health.pct>90))
 
 
   auto_purge_enrage:
@@ -187,6 +190,7 @@ lists:
     #- misdirection,target=tank1,if=!player.inraid&combat.time<3
     - call_action_list,name=auto_hunters_mark,if=config.auto_hunters_mark
     - return,if=auto_combat.target
+    # - pet_attack,if=target.attackable&pet.alive&!pet.attacking_target
     - call_action_list,name=cds
     - call_action_list,name=trinkets
     - call_action_list,name=drst,if=talent.black_arrow&(enemies_around_target<2|!talent.beast_cleave&enemies_around_target<3)
