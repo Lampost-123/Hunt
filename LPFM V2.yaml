@@ -1,8 +1,3 @@
-# =============================================================================
-# Frost Mage (Spellslinger) - Spec ID 64
-# Optimized for Patch 12.0.5 Midnight & Mythic+ Dungeons
-# =============================================================================
-
 version: 3
 spec: 64
 name: "LPFM V2"
@@ -53,147 +48,94 @@ config:
     default: false
 
 variables:
-  # Check if counterspell is on cooldown
   cs_on_cd: "!cooldown.counterspell.ready"
 
 lists:
 
   defensives:
-    # Ice Cold (70% DR, off-GCD, castable while channeling Ray of Frost)
     - ice_cold,range_check=none,if=health.pct<=config.ice_cold_hp_pct&cooldown.ice_cold.charges>=1
-    # Ice Barrier (shields player)
     - ice_barrier,range_check=none,if=health.pct<=config.ice_barrier_hp_pct&!buff.ice_barrier.up&cooldown.ice_barrier.charges>=1
-    # Cold Snap: emergency defensive reset for Ice Barrier & Ice Cold
     - cold_snap,range_check=none,if=talent.cold_snap&(!cooldown.ice_cold.ready|!cooldown.ice_barrier.ready)&health.pct<=config.ice_cold_hp_pct*1.5
 
   interrupts:
     - return,if=!config.auto_counterspell
-    # Focus, Mouseover, and Target kicks using Counterspell
     - counterspell.focus,if=interrupt.focus.check
     - counterspell.mouseover,if=interrupt.mouseover.check
     - counterspell,if=interrupt.target.check
     - counterspell,if=interrupt.stun.aoe.check
-
-    # Fallback interrupts when Counterspell is on cooldown
-    # Dragon's Breath: Centered on player, 10 yards range, disorients enemies
     - dragons_breath,if=var.cs_on_cd&target.distance<=10&(interrupt.target.check|interrupt.stun.aoe.check)
-    # Supernova: Targeted knock up, 40 yards range
     - supernova.focus,if=var.cs_on_cd&interrupt.focus.check
     - supernova.mouseover,if=var.cs_on_cd&interrupt.mouseover.check
     - supernova,if=var.cs_on_cd&(interrupt.target.check|interrupt.stun.aoe.check)
 
   utility:
     - return,if=!config.auto_spellsteal
-    # Automated friendly dispel/decurse (Remove Curse) from _shared.yaml if talented
     - remove_curse,delay=500,cycle=party,if=cycle.dispelable.list
-    # Spellsteal: Steals beneficial magic buffs from focus, mouseover, or target
     - spellsteal.focus,if=focus.enemy&focus.has_stealable
     - spellsteal.mouseover,if=mouseover.enemy&mouseover.has_stealable
     - spellsteal,if=target.enemy&target.has_stealable
 
   cds:
     - return,if=!config.use_cds
-    # Racials & Trinkets synced under high Freeze stack or pot/orb windows
     - berserking,if=cooldown.frozen_orb.remains<2|debuff.freezing.stack>=14
     - blood_fury,if=cooldown.frozen_orb.remains<2|debuff.freezing.stack>=14
     - ancestral_call,if=cooldown.frozen_orb.remains<2|debuff.freezing.stack>=14
     - fireblood,if=cooldown.frozen_orb.remains<2|debuff.freezing.stack>=14
-    # Trinkets (standard Custom series style)
     - trinket_1,if=trinket_1.sync&(cooldown.frozen_orb.remains<2|debuff.freezing.stack>=14)
     - trinket_2,if=trinket_2.sync&(cooldown.frozen_orb.remains<2|debuff.freezing.stack>=14)
 
   ss_st:
-    # 1. Flurry if Brain Freeze active and Thermal Void is down (maintain Freeze ramping)
     - flurry,if=buff.brain_freeze.react&buff.thermal_void.down
-    # 2. Ice Lance to dump capped Fingers of Frost procs (prevent overcapping)
     - ice_lance,if=buff.fingers_of_frost.react=2
-    # 3. Frozen Orb on cooldown for heavy passive stack building
     - frozen_orb
-    # 4. Glacial Spike (only castable in-combat in 12.0.5)
     - glacial_spike
-    # 5. Ice Lance to spend Spellslinger splinters at optimal >= 6 stacks, or under single FoF proc
     - ice_lance,if=debuff.freezing.react>=6|buff.fingers_of_frost.react
-    # 6. Comet Storm on cooldown to trigger explosive shatters
     - comet_storm,if=talent.comet_storm
-    # 7. Flurry on cooldown to apply Freeze stacks
     - flurry,if=cooldown_react
-    # 8. Ray of Frost (fragile 4s channel, must stand still, do not cast if procs are active)
     - ray_of_frost,if=!player.moving&debuff.freezing.stack<14&!buff.fingers_of_frost.react&!buff.brain_freeze.react
-    # 9. Frostbolt as baseline filler
     - frostbolt
 
   ss_aoe:
-    # 1. Blizzard with Freezing Rain active (instant cast high priority)
     - blizzard,if=buff.freezing_rain.up
-    # 2. Flurry with Brain Freeze active and Thermal Void down
     - flurry,if=buff.brain_freeze.react&buff.thermal_void.down
-    # 3. Ice Lance to prevent Fingers of Frost capping
     - ice_lance,if=buff.fingers_of_frost.react=2
-    # 4. Frozen Orb (AoE engine)
     - frozen_orb
-    # 5. Glacial Spike (cleaves 2 targets)
     - glacial_spike
-    # 6. Comet Storm (AoE shatter burst)
     - comet_storm,if=talent.comet_storm
-    # 7. Ice Lance to spend Freeze stacks at optimal >= 6 stacks, or under single FoF proc
     - ice_lance,if=debuff.freezing.react>=6|buff.fingers_of_frost.react
-    # 8. Flurry on cooldown to apply Freeze stacks
     - flurry,if=cooldown_react
-    # 9. Ray of Frost (massively fuels AoE splinters, only stand still)
     - ray_of_frost,if=!player.moving&debuff.freezing.stack<14&!buff.fingers_of_frost.react&!buff.brain_freeze.react
-    # 10. Blizzard as passive damage/orb CD reducer
     - blizzard,if=enemies_around_target>=5&talent.freezing_winds
-    # 11. Frostbolt as filler
     - frostbolt
 
   ss_tarswap:
-    # 1. Blizzard with Freezing Rain active (instant cast high priority)
     - blizzard,if=buff.freezing_rain.up
-    # 2. Training Dummy Swapping: Completely bypass all target safeguards (combat, classification, HP, TTD) when targeting a practice dummy.
-    # This allows effortless, unlimited target-cycling practice and rotation testing out of combat.
     - target_enemy,delay=1500,off_gcd=true,if=target.dummy&debuff.freezing.stack>=6&debuff.freezing.stack>nameplates.debuff.freezing.lowest
-    # 3. Standard-Mob Swapping: Cycles targets off-GCD with full dungeon safeguards active.
-    # Only swaps if: we are on a real elite (classification > 3), healthy (HP >= 20%), in combat, and target TTD is at least 5 seconds.
     - target_enemy,delay=1500,off_gcd=true,if=!target.dummy&enemies_around_target>=2&target.classification>3&target.combat&target.health.pct>=20&target.time_to_die>=5&debuff.freezing.stack>=6&debuff.freezing.stack>nameplates.debuff.freezing.lowest
-    # 4. Active Priority Swap-Off: If our current target is a non-elite (classification <= 3) and not a dummy, actively swap off-GCD to find an elite/boss in the pack.
-    # Uses a 3-second pacing delay to allow casting if only non-elites are present. Only triggers if config.auto_swap_non_elites is enabled.
     - target_enemy,delay=3000,off_gcd=true,if=config.auto_swap_non_elites&enemies_around_target>=2&!target.dummy&target.classification<=3
-    # 5. Flurry with Brain Freeze active and Thermal Void down to build stacks on the new target
     - flurry,if=buff.brain_freeze.react&buff.thermal_void.down
-    # 5. Ice Lance to prevent Fingers of Frost capping
     - ice_lance,if=buff.fingers_of_frost.react=2
-    # 6. Standard AoE/Cleave builders
     - frozen_orb
     - glacial_spike
-    # 7. Spend Fingers of Frost / trigger optimal Spellslinger shatters
     - ice_lance,if=enemies_around_target<=2&debuff.freezing.react>=6
     - ice_lance,if=enemies_around_target>=3
-    # 8. Fallback Flurry to apply Freeze stacks
     - flurry,if=cooldown_react
-    # 9. Ray of Frost to fuel splinters safely (must stand still)
     - ray_of_frost,if=!player.moving&debuff.freezing.stack<14&!buff.fingers_of_frost.react&!buff.brain_freeze.react
-    # 10. Run regular ST as fallback
     - call_action_list,name=ss_st
 
   movement:
-    # Instant casts on move
     - blizzard,if=buff.freezing_rain.up&player.moving
     - ice_nova,if=talent.cone_of_frost&player.moving
     - cone_of_cold,if=talent.cone_of_frost&player.moving
     - ice_lance,if=player.moving
 
   precombat:
-    # Arcane Intellect self-buff out of combat
     - arcane_intellect,range_check=none,if=buff.arcane_intellect.down&!player.combat
-    # Summon Water Elemental if we don't have it and lonely winter isn't talented
     - summon_water_elemental,range_check=none,if=(!pet.exists|pet.dead)&!player.combat&!talent.lonely_winter
-    # Precast Frostbolt (NO precombat Glacial Spike)
     - frostbolt,if=!player.combat&target.attackable
 
   auto_target:
-    # 1. Fallback to default Auto Target from _shared.yaml if we have no target or it's dead
     - call_action_list,name=auto_target_ranged
-    # 2. If we are in active combat but our current target is NOT in combat (or invalid), hard swap off-GCD immediately to a combatant (or dummy)
     - target_enemy,delay=200,off_gcd=true,if=player.combat&(!target.exists|!target.combat&!target.dummy|!target.valid&!target.dummy)&(enemies.combat.40y>=1|target.dummy)
 
   main:
@@ -202,8 +144,6 @@ lists:
     - call_action_list,name=auto_target
     - call_action_list,name=precombat,if=!player.combat
     - stoneform,delay=1000,if=player.dispelable.list
-    # Prevent attacking any target that is not in combat (PVE target.valid/target.combat constraint) to prevent accidental ninja-pulling nearby packs.
-    # Training dummies bypass this check to allow seamless target swapping/testing out of combat.
     - return,if=(!player.combat&!target.dummy)|(!target.combat&!target.dummy)|(!target.valid&!target.dummy)
     - call_action_list,name=defensives
     - call_action_list,name=interrupts
