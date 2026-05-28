@@ -67,8 +67,8 @@ variables:
   wt_focus_ok: "cooldown.wild_thrash.remains>gcd+execute_time|focus>=65"
   cs_focus_ok: "cooldown.kill_command.remains>gcd+execute_time|focus>=65|buff.natures_ally.down"
   pet_bw_ok: "pet.nearby_enemies>=1"  #pet.attacking_target&
-
   plbuff: "player.buff.remains(472325)|player.buff.remains(472324)|player.buff.remains(471878)"
+
 lists:
 
   trinkets:
@@ -95,18 +95,18 @@ lists:
   st:
     - barbed_shot,if=cooldown.bestial_wrath.remains<gcd
     - bestial_wrath,if=var.pet_bw_ok
-    - wild_thrash,if=pet.attacking_target&pet.nearby_enemies>1
+    - wild_thrash,if=pet.nearby_enemies>1
     - kill_command,if=cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react|plbuff
     - barbed_shot,if=(focus<75|cooldown.barbed_shot.full_recharge_time<gcd)&!talent.serpentine_strikes|talent.serpentine_strikes
     - cobra_shot,if=cooldown.bestial_wrath.remains>gcd
 
 
   cleave:
-    - kill_command,if=(plbuff|(cooldown.kill_command.full_recharge_time<gcd&!cooldown.wild_thrash.ready))
+    - wild_thrash,if=talent.beast_cleave
+    - kill_command,if=(plbuff&!cooldown.wild_thrash.ready)
     - barbed_shot,if=cooldown.barbed_shot.full_recharge_time<gcd
-    - wild_thrash,if=talent.beast_cleave&var.pet_bw_ok
     - bestial_wrath,if=!prev_gcd.1.wild_thrash&!cooldown.wild_thrash.ready&var.pet_bw_ok
-    - wild_thrash,if=!talent.beast_cleave&var.pet_bw_ok
+    - wild_thrash,if=!talent.beast_cleave
     - kill_command,if=buff.natures_ally.react|talent.master_handler&(enemies_around_target>3)|plbuff
     - cobra_shot,if=cooldown.wild_thrash.remains>gcd&buff.hogstrider.up&enemies_around_target<4
     - barbed_shot
