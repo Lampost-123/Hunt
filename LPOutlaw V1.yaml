@@ -1,25 +1,5 @@
 # ==============================================================================
-# Outlaw Rogue Rotation - LPOutlaw V1 (WoW Midnight 12.0.5)
-# ==============================================================================
-# AUTHOR: LP
-# DESCRIPTION:
-#   A highly optimized Outlaw Rogue rotation designed specifically for Patch 12.0.5
-#   Midnight, focusing on Mythic+ and high-key utility. Supports both Trickster
-#   (recommended for M+ due to Fazed 3-stack scaling) and Fatebound hero trees.
-#
-# TIPS & TRICKS IMPLEMENTED:
-#   1. Reworked Roll the Bones: Normalizes RNG by using cumulative stages. Rerolls
-#      only on Stage 1 or lower. Stage 2+ is maintained.
-#   2. Keep It Rolling: Intelligently extends Stage 3+ buffs. Supports Stage 2
-#      extensions when Adrenaline Rush / Loaded Dice is not imminent to avoid holding KIR.
-#   3. Killing Spree Energy Cancel: Features safe-checking to interrupt/cancel
-#      Killing Spree if Energy is about to cap (waste of CDR and resources).
-#   4. Blade Flurry Cleave Positioning: Remember that Blade Flurry cleave originates
-#      from you, not the target. Position yourself between mobs.
-#   5. Blind / Sap Skip: Utilizes Blind and Shroud / Vanish tricks to skip packs.
-#   6. Auto-Target Interrupts: Automatically target-swaps to casting enemies within
-#      8 yards to cast Kick, Kidney Shot, or Blind, and swaps back.
-# ==============================================================================
+ 
 
 version: 3
 class: rogue
@@ -152,31 +132,23 @@ config:
     show_override: true
 
 variables:
-  # === TARGET STATE ===
   target_valid: target.exists&target.enemy&target.alive
   target_attackable: var.target_valid&target.range<=8
   enemies_in_melee: enemies.8y
 
-  # === FEATURES FLAGS ===
   auto_target: config.features.has(0)
   use_kidney: config.features.has(1)
   use_blind: config.features.has(2)
 
-  # === M+ AFFIX ===
   affix_priority_mode: config.affix_handling&(target.name="Void Emissary"|(target.name="Ascendant Orb"&target.casting))
 
-  # === 12.0 ROLL THE BONES ===
-  # Roll the Bones stage (1-4). Only one stage buff is active at a time.
   rtb_buffs: "buff.jackpot.up*4+buff.triple_threat.up*3+buff.double_trouble.up*2+buff.one_of_a_kind.up"
-  # Remaining time on the active stage buff (sum works since only one is active at a time)
   rtb_remains: "buff.jackpot.remains+buff.triple_threat.remains+buff.double_trouble.remains+buff.one_of_a_kind.remains"
   rtb_up: var.rtb_buffs>0
 
-  # === HERO TALENT TREES ===
   hero_tree_fatebound: config.hero_tree=1
   hero_tree_trickster: config.hero_tree=2
 
-  # === CORE COMBAT STATE ===
   adrenaline_rush_up: buff.adrenaline_rush.up
   bte_ready: cooldown.between_the_eyes.ready
   killing_spree_ready: cooldown.killing_spree.ready
@@ -189,39 +161,28 @@ variables:
   subterfuge_up: buff.subterfuge.up
   in_stealth: var.stealth_up|var.vanish_up|var.shadow_dance_up
 
-  # === FINISHER CONDITION FROM SIMC (12.0.5 Midnight) ===
   finish_condition: combo_points>=combo_points.max-1-(var.hero_tree_fatebound&!var.bte_ready)|(var.killing_spree_ready&combo_points>=5)
 
-  # === HEALTH ===
   health_critical: player.health.pct<30
 
-  # === INTERRUPT SYSTEM ===
   kick_ready: cooldown.kick.ready
   kidney_ready: cooldown.kidney_shot.ready
   blind_ready: cooldown.blind.ready
   enough_cp_for_kidney: combo_points>=4
 
-  # Is current target casting something we can interrupt or stun
   target_is_kickable: target.incoming_cast.kickable.up
   target_is_stunnable: target.incoming_cast.stunnable.up
   target_needs_interrupt: target.incoming_cast.kickable.up|target.incoming_cast.stunnable.up
 
-  # Is there ANY enemy nearby casting something we can deal with
   any_kickable_8y: incoming_cast.8y.kickable.up
   any_stunnable_8y: incoming_cast.8y.stunnable.up
   any_interrupt_8y: incoming_cast.8y.kickable.up|incoming_cast.8y.stunnable.up
-
-  # Mouseover / Focus
   mouseover_kickable: mouseover.incoming_cast.kickable.up
   mouseover_stunnable: mouseover.incoming_cast.stunnable.up
   focus_kickable: focus.incoming_cast.kickable.up
   focus_stunnable: focus.incoming_cast.stunnable.up
-
-  # === POISON STATE ===
   mainhand_poison_up: buff.instant_poison.up|buff.deadly_poison.up|buff.wound_poison.up
   offhand_poison_up: buff.crippling_poison.up|buff.numbing_poison.up|buff.atrophic_poison.up
-
-  # === AOE ===
   aoe_active: active_enemies>1
 
 lists:
@@ -251,7 +212,6 @@ lists:
     - trinket_1,if=trinket_1.ready&(buff.between_the_eyes.up|trinket_1.usable|fight_remains<=20)
     - trinket_2,if=trinket_2.ready&(buff.between_the_eyes.up|trinket_2.usable|fight_remains<=20)
 
-  # === INTERRUPTS: High priority M+ kick, stun, and disorient stops using shared expressions ===
   interrupts:
     # --- Auto-target: only fires in combat, stops the moment current target needs an interrupt ---
     - target_enemy,if=player.combat&var.any_interrupt_8y&!var.target_needs_interrupt&(var.kick_ready|var.kidney_ready|var.blind_ready)&var.auto_target
@@ -290,26 +250,9 @@ lists:
   utility:
 
 
-  # === AFFIX ABILITIES: Priority-burn and crowd control for M+ affixes ===
+ 
   affix_abilities:
-    # - blind,delay=config.interrupt_timing,if=target.name="Ascendant Orb"&target.casting&var.blind_ready
-    # - cloak_of_shadows,range_check=none,if=cooldown.cloak_of_shadows.ready&!buff.cloak_of_shadows.up&defensives.ready.magic
-    # - feint,range_check=none,if=cooldown.feint.charges>=1&!buff.feint.up&player.health.pct<config.feint_hp
-    # - evasion,if=cooldown.evasion.ready&!buff.evasion.up&(defensives.ready|var.health_critical)
-    # - crimson_vial,range_check=none,if=player.health.pct<config.crimson_vial_hp&cooldown.crimson_vial.ready
-    # - adrenaline_rush,if=!var.adrenaline_rush_up
-    # - blade_flurry,if=var.enemies_in_melee>=2&buff.blade_flurry.remains<gcd
-    # - roll_the_bones,if=!var.rtb_up
-    # - trinket_1,if=trinket_1.ready
-    # - trinket_2,if=trinket_2.ready
-    # - between_the_eyes,if=combo_points>=combo_points.max-1
-    # - dispatch,if=combo_points>=combo_points.max-1
-    # - ambush,if=talent.hidden_opportunity&var.audacity_up
-    # - pistol_shot,if=var.opportunity_up
-    # - ambush,if=talent.hidden_opportunity
-    # - sinister_strike
 
-  # === OPENER: Specialized 12.0.5 sequence to build and dump to 6+ CP ===
   opener:
     - adrenaline_rush,if=!var.adrenaline_rush_up&cooldown.adrenaline_rush.ready&var.hero_tree_trickster
     # - ambush,if=combo_points<5
@@ -341,30 +284,23 @@ lists:
     - fireblood
     - ancestral_call
 
-  # === FINISH: Finisher spending priorities (6+ CP, 5+ as Fatebound, 5+ for Killing Spree) ===
   finish:
-    # Ensure Slice and Dice is applied/maintained via initial Dispatch
     - dispatch,if=!var.slice_and_dice_up
     
-    # Between the Eyes on cooldown at max CP, optimized for Supercharger/Zero In
     - between_the_eyes,if=(cooldown.adrenaline_rush.remains>30|var.adrenaline_rush_up|!talent.supercharger|!talent.zero_in)&(combo_points>=6|var.hero_tree_fatebound)
     
     - pool_resource,for_next=1,if=var.killing_spree_ready&combo_points>=5
     
-    # Killing Spree (Trickster must-use finisher). Cancels early if we are going to overcap energy!
     - killing_spree,interrupt_if=energy.time_to_max<2,if=var.killing_spree_ready&combo_points>=5
     
-    # Coup de Grace (Trickster mega finisher) / Dispatch (strictly 6+ CP for Trickster, 5+ for Fatebound)
     - coup_de_grace,if=combo_points>=6|var.hero_tree_fatebound
     - dispatch,if=combo_points>=6|var.hero_tree_fatebound
 
-  # === BUILD: Optimized Combo Point generation (Fan the Hammer and opportunity tracking) ===
   build:
     - ambush,if=talent.hidden_opportunity&var.audacity_up
     - coup_de_grace,if=buff.disorienting_strikes.up
     - pistol_shot,if=talent.audacity&talent.hidden_opportunity&var.opportunity_up&!var.audacity_up
     
-    # Spend Opportunity procs correctly under Fan the Hammer rules to avoid stack waste
     - pistol_shot,if=talent.fan_the_hammer&var.opportunity_up&(buff.opportunity.stack>=6|buff.opportunity.remains<2)
     - pistol_shot,if=talent.fan_the_hammer&var.opportunity_up&(combo_points.deficit>=(1+talent.quick_draw+(talent.quick_draw*talent.fan_the_hammer.rank))&(combo_points>1|var.rtb_stage<2|!talent.deal_fate))
     - pistol_shot,if=!talent.fan_the_hammer&var.opportunity_up&(energy.deficit>energy.regen*1.5|combo_points.deficit<=1|talent.quick_draw.enabled|talent.audacity.enabled&!var.audacity_up)
@@ -373,12 +309,10 @@ lists:
     - ambush,if=talent.hidden_opportunity
     - sinister_strike
 
-  # === ENTRY POINT ===
   main:
     - call_action_list,name=spell_queue
     - call_action_list,name=sanity_checks
     
-    # Target fallback for melee range acquisition
     - target_enemy,if=(!target.valid|target.range>6)&enemies.6y>=1
     
     - call_action_list,name=out_of_combat,if=!player.combat
@@ -386,37 +320,28 @@ lists:
     - return,if=player.channeling
     - return,if=!target.exists|target.dead|!target.enemy
 
-    # === PRECOMBAT: RTB at 8y, AR at 6y (Trickster only) | Fatebound RTB on Loaded Dice ===
     - roll_the_bones,if=!player.combat&var.stealth_up&!var.rtb_up&var.hero_tree_trickster&enemies.8y>=1
     - roll_the_bones,if=!player.combat&var.stealth_up&!var.rtb_up&var.hero_tree_fatebound&buff.loaded_dice.up&enemies.8y>=1
     - adrenaline_rush,if=!player.combat&!var.adrenaline_rush_up&var.stealth_up&cooldown.adrenaline_rush.ready&var.hero_tree_trickster&enemies.6y>=1
 
-    # === BLADE FLURRY AOE TOP PRIORITY ===
     - blade_flurry,if=player.combat&var.enemies_in_melee>=2&buff.blade_flurry.remains<gcd
     - blade_flurry,if=player.combat&buff.blade_flurry.up&combo_points<=4&var.enemies_in_melee>=4
 
-    # === AFFIX INTERCEPT ===
     - run_action_list,name=affix_abilities,if=player.combat&var.affix_priority_mode
 
-    # === INTERRUPTS ===
     - call_action_list,name=interrupts
 
-    # === DEFENSIVES ===
     - call_action_list,name=defensives,if=config.auto_defensives
 
-    # === UTILITY ===
     - call_action_list,name=utility,if=var.target_attackable
 
-    # === OPENER SEQUENCE ===
     - call_action_list,name=opener,if=player.combat.time<=5&var.in_stealth
 
-    # === CORE COMBAT ROTATION ===
     - call_action_list,name=cooldowns,if=var.target_attackable
     - call_action_list,name=trinkets
     - run_action_list,name=finish,if=var.finish_condition
     - call_action_list,name=build
 
-    # === RACIAL FILLERS ===
     - arcane_torrent,if=energy.deficit>=15+energy.regen
     - arcane_pulse
     - lights_judgment
