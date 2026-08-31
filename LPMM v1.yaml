@@ -1,0 +1,151 @@
+version: 3
+spec: 254
+entry: main
+name: "LPMM v1"
+
+spell_overrides:
+  aimed_shot: "!player.moving|buff.lock_and_load.up"
+
+config:
+  about:
+    section: "Info"
+    type: note
+    label: "Rotation Info"
+    text: "Last update: 2026-08-31 | Patch: 12.1 | Version: 1.0 If you want to disable auto hunters mark/tranquilizing shot do it in the keybind window."
+
+  exhilaration_hp_pct:
+    section: "Defensive HP Percentage"
+    label: "Exhilaration HP%"
+    type: slider
+    min: 0
+    max: 100
+    default: 40
+  survival_of_the_fittest_hp_pct:
+    section: "Defensive HP Percentage"
+    label: "Survival of the Fittest HP%"
+    type: slider
+    min: 0
+    max: 100
+    default: 50
+  survival_of_the_fittest_dmg_pct:
+    section: "Defensives Prediction Damage"
+    label: "Survival of the Fittest (Incoming Dmg%)"
+    type: slider
+    min: 0
+    max: 100
+    default: 50
+
+variables:
+  trueshot_ready: "!talent.bullseye|(fight_remains>cooldown.trueshot.duration+10|buff.bullseye.stack>=30)&(cooldown.explosive_shot.remains>=15|cooldown.explosive_shot.ready)|fight_remains<25|combat.time<10"
+  precise_shots_predicted: "buff.precise_shots.up|(lastcast.aimed_shot<0.5&lastcast.arcane_shot>lastcast.aimed_shot)"
+
+lists:
+  defensives:
+    - survival_of_the_fittest,range_check=none,if=incoming.mitigated.pct>=config.survival_of_the_fittest_dmg_pct
+    - exhilaration,range_check=none,if=health.pct<=config.exhilaration_hp_pct
+    - survival_of_the_fittest,range_check=none,if=health.pct<=config.survival_of_the_fittest_hp_pct
+
+  cds:
+    - berserking,if=buff.trueshot.up|fight_remains<13
+    - blood_fury,if=buff.trueshot.up|cooldown.trueshot.remains>30|fight_remains<16
+    - ancestral_call,if=buff.trueshot.up|cooldown.trueshot.remains>30|fight_remains<16
+    - fireblood,if=buff.trueshot.up|cooldown.trueshot.remains>30|fight_remains<9
+    - lights_judgment,if=buff.trueshot.down
+
+  drst:
+    - black_arrow,if=var.precise_shots_predicted
+    - explosive_shot,if=(!talent.tactical_reload|!buff.lock_and_load.up)&(cooldown.trueshot.ready|cooldown.trueshot.remains>15|fight_remains<25)
+    - volley,if=cooldown.trueshot.ready|cooldown.trueshot.remains>15|fight_remains<25
+    - aimed_shot,if=buff.trueshot.up&buff.precise_shots.down&cooldown.black_arrow.ready|cooldown.aimed_shot.full_recharge_time<gcd+action.aimed_shot.cast_time
+    - trueshot,if=var.trueshot_ready
+    - rapid_fire
+    - wailing_arrow
+    - multishot,if=var.precise_shots_predicted&enemies_around_target>1&talent.aspect_of_the_hydra
+    - arcane_shot,if=var.precise_shots_predicted
+    - aimed_shot
+    - black_arrow
+    - steady_shot
+
+  draoe:
+    - explosive_shot,if=(!talent.tactical_reload|!buff.lock_and_load.up)&(cooldown.trueshot.ready|cooldown.trueshot.remains>15|fight_remains<25)
+    - volley,if=cooldown.trueshot.ready|cooldown.trueshot.remains>15|fight_remains<25
+    - aimed_shot,if=buff.trick_shots.remains>action.aimed_shot.cast_time&cooldown.aimed_shot.full_recharge_time<gcd+action.aimed_shot.cast_time
+    - black_arrow,if=var.precise_shots_predicted
+    - multishot,if=buff.trick_shots.down
+    - trueshot,if=var.trueshot_ready
+    - rapid_fire,if=buff.trick_shots.remains>action.rapid_fire.execute_time&(buff.bulletstorm.remains<action.aimed_shot.execute_time|talent.unload)
+    - wailing_arrow,if=!cooldown.black_arrow.ready
+    - multishot,if=var.precise_shots_predicted
+    - aimed_shot,if=lastcast.aimed_shot>gcd&buff.trick_shots.remains>action.aimed_shot.cast_time
+    - black_arrow
+    - steady_shot,if=focus
+
+  sentaoe:
+    - explosive_shot,if=(!talent.tactical_reload|!buff.lock_and_load.up)&(cooldown.trueshot.ready|cooldown.trueshot.remains>15|fight_remains<25)
+    - volley,if=state.cds&one_button_assistant.Volley&(cooldown.trueshot.ready|cooldown.trueshot.remains>15|fight_remains<25)
+    - trueshot,if=var.trueshot_ready
+    - moonlight_chakram,if=buff.moonlight_chakram.remains<gcd.max
+    - multishot,if=var.precise_shots_predicted&!talent.aspect_of_the_hydra|buff.trick_shots.down
+    - rapid_fire,if=talent.unload
+    - rapid_fire
+    - aimed_shot,if=!player.casting.aimed_shot&!var.precise_shots_predicted&(buff.trick_shots.remains>action.aimed_shot.cast_time)
+    - moonlight_chakram
+    - steady_shot,ignore_movement=true,if=player.standing.time<1|focus<cooldown.aimed_shot.cost|cooldown.aimed_shot.charges<1|(var.precise_shots_predicted&(talent.aspect_of_the_hydra&focus<cooldown.arcane_shot.cost|talent.trick_shots&!talent.aspect_of_the_hydra&focus<cooldown.multishot.cost))
+
+  sentst:
+    - explosive_shot,if=(!talent.tactical_reload|!buff.lock_and_load.up)&(cooldown.trueshot.ready|cooldown.trueshot.remains>15|fight_remains<25)
+    - volley,if=state.cds&one_button_assistant.Volley&(cooldown.trueshot.ready|cooldown.trueshot.remains>15|fight_remains<25)
+    - trueshot,if=var.trueshot_ready
+    - moonlight_chakram,if=buff.moonlight_chakram.remains<gcd.max
+    - kill_shot,if=var.precise_shots_predicted
+    - multishot,if=var.precise_shots_predicted&enemies_around_target>1&talent.aspect_of_the_hydra
+    - arcane_shot,if=var.precise_shots_predicted
+    - rapid_fire
+    - aimed_shot,if=!player.casting.aimed_shot&!var.precise_shots_predicted
+    - moonlight_chakram
+    - steady_shot,ignore_movement=true,if=player.standing.time<1|focus<cooldown.aimed_shot.cost|cooldown.aimed_shot.charges<1|(var.precise_shots_predicted&focus<cooldown.arcane_shot.cost)
+
+  auto_hunters_mark:
+    - hunters_mark,if=nameplates.debuff.hunters_mark.count=0&debuff.hunters_mark.down&target.health.pct>25&target.time_to_die>15&target.time_to_die<9999&(target.boss|target.classification>3|target.npcid=243208|(target.dummy&target.health.pct>90))
+
+  auto_purge_enrage:
+    - tranquilizing_shot.mouseover,range_check=mouseover,if=mouseover.enemy&(mouseover.purgeable.enrage|mouseover.purgeable.magic)
+    - tranquilizing_shot,if=target.enemy&(target.purgeable.enrage|target.purgeable.magic)
+
+  main:
+    - call_action_list,name=spell_queue
+    - call_action_list,name=sanity_checks
+    - call_action_list,name=auto_target
+
+    - call_pet_1,range_check=none,if=!pet.exists
+
+    - return,if=auto_combat.player
+
+    - call_action_list,name=defensives
+
+    - counter_shot,if=interrupt.target.check
+    - counter_shot.mouseover,if=interrupt.mouseover.check
+    - counter_shot.focus,if=interrupt.focus.check
+    - intimidation,if=interrupt.cc.check
+    - quaking_palm,if=interrupt.cc.check
+    - haymaker,if=interrupt.cc.check
+    - war_stomp,if=interrupt.stun.aoe.check
+    - bull_rush,if=interrupt.stun.aoe.check
+
+    - call_action_list,name=auto_purge_enrage
+    - call_action_list,name=auto_heal
+    - call_action_list,name=auto_hunters_mark
+
+    - misdirection,target=tank1,if=!player.inraid&combat.time<3
+
+    - return,if=auto_combat.target
+
+    - call_action_list,name=cds
+
+    - trinket_1,if=trinket_1.sync
+    - trinket_2,if=trinket_2.sync
+
+    - call_action_list,name=draoe,if=enemies_around_target>2&talent.trick_shots&hero_tree.dark_ranger
+    - call_action_list,name=sentaoe,if=enemies_around_target>2&talent.trick_shots&hero_tree.sentinel
+    - call_action_list,name=drst,if=hero_tree.dark_ranger
+    - call_action_list,name=sentst,if=hero_tree.sentinel
