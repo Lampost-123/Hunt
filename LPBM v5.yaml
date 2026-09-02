@@ -151,6 +151,7 @@ lists:
     - call_action_list,name=auto_heal
     - call_action_list,name=auto_hunters_mark
     - return,if=auto_combat.target
+    - call_action_list,name=trinkets
     - call_action_list,name=cds
     - call_action_list,name=st,if=enemies_around_target<2|!talent.beast_cleave&enemies_around_target<3
     - call_action_list,name=cleave,if=enemies_around_target>2|talent.beast_cleave&enemies_around_target>1
