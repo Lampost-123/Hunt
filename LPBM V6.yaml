@@ -1,0 +1,189 @@
+spec: 253
+version: 6.0
+name: "LP Beast Mastery V6"
+author: "LP"
+description: "Pack Leader only — SimC midnight st/cleave, Nature's Ally weave"
+entry: main
+
+config:
+  about:
+    section: "Info"
+    label: "Rotation Info"
+    type: note
+    text: "Last update: 2026-09-27 | Patch: 12.1 | Version: 6.0 (M+)"
+
+  standard_cds:
+    section: "Rotation"
+    label: "Standard BW, Wild Thrash, Trinkets usufull for Raid when not using Times addon"
+    description: "Off uses the custom Bestial Wrath window. On uses the stock lines."
+    type: checkbox
+    default: false
+
+  recommended_talents:
+    section: "Talents"
+    label: "Recommended Build(M+)"
+    type: copy_text
+    text: "C0PAD57yiELKEty14ekTDtZEqAMmxwCsAzwQDbAAYGzMzs8AzYmZmZMzgZGzMMzYmZGbzMjZMDLDNDAAAAAAAAMjxAmZjAmFw2AA"
+
+  auto_hunters_mark:
+    section: "Utility"
+    label: "Auto Hunter's Mark"
+    type: checkbox
+    default: true
+
+  auto_tranquilizing_shot:
+    section: "Utility"
+    label: "Auto Tranquilizing Shot"
+    type: checkbox
+    default: true
+
+  survival_of_the_fittest_hp_pct:
+    label: "Survival of the Fittest"
+    type: slider
+    min: 0
+    max: 100
+    default: 50
+
+  aspect_of_the_turtle_hp_pct:
+    label: "Aspect of the Turtle"
+    type: slider
+    min: 0
+    max: 100
+    default: 30
+
+  exhilaration_hp_pct:
+    label: "Exhilaration"
+    type: slider
+    min: 0
+    max: 100
+    default: 50
+
+  mend_pet_high_prio_hp_pct:
+    section: "Pet Management"
+    label: "Mend Pet High Priority"
+    type: slider
+    min: 0
+    max: 100
+    default: 40
+
+  mend_pet_low_prio_hp_pct:
+    section: "Pet Management"
+    label: "Mend Pet Low Priority"
+    type: slider
+    min: 0
+    max: 100
+    default: 80
+
+  call_pet_number:
+    section: "Pet Management"
+    label: "Call Pet Number"
+    type: slider
+    min: 1
+    max: 5
+    default: 1
+
+variables:
+  wt_follow: "cooldown.wild_thrash.ready|cooldown.wild_thrash.remains<=1.4"
+  bc_ok: "buff.beast_cleave.remains>cooldown_bypass.bestial_wrath.remains&buff.beast_cleave.remains>cooldown.wild_thrash.remains"
+  wt_setup: "state.cds&cooldown_bypass.bestial_wrath.remains<=9&cooldown_bypass.bestial_wrath.remains>8-1.4&!var.bc_ok"
+  wt_far: "!state.cds|cooldown_bypass.bestial_wrath.remains>16+gcd"
+  wt_recover: "state.cds&cooldown_bypass.bestial_wrath.remains<=8-1.4&!var.bc_ok"
+
+  bw_aoe: "buff.beast_cleave.remains&(var.wt_follow|fight_remains<15|buff.beast_cleave.remains<=1.4)"
+  bw_st: "player.boss_fight|target.boss|target.time_to_die>=25"
+  bw_soon: "cooldown.bestial_wrath.ready|cooldown.bestial_wrath.remains<=gcd"
+  bw_send: "cooldown.bestial_wrath.ready&var.bw_aoe"
+  bw_intend: "state.cds&(var.bw_send|cooldown_bypass.bestial_wrath.remains<=1.4&buff.beast_cleave.remains>cooldown_bypass.bestial_wrath.remains&(cooldown.wild_thrash.ready|cooldown.wild_thrash.remains<=cooldown_bypass.bestial_wrath.remains+1.4|fight_remains<15))"
+  barbed_ok: "lastcast.bestial_wrath>=gcd&!var.bw_intend"
+
+  trinket_press: "var.bw_soon&((enemies_around_target<2&player.boss_fight|!talent.beast_cleave&enemies_around_target<3)&var.bw_st|(enemies_around_target>2|talent.beast_cleave&enemies_around_target>1)&var.bw_aoe)"
+  trinket_use: "var.trinket_press&fight_remains>21&(trinket_1.has_onuse&trinket_1.ready|trinket_2.has_onuse&trinket_2.ready)"
+
+lists:
+  trinkets:
+    - use_item,name=light_company_guidon,off_gcd=true,if=!config.standard_cds&var.trinket_use|config.standard_cds&(cooldown.bestial_wrath.ready|fight_remains<21)
+    - use_item,name=void_execution_mandate,off_gcd=true,if=!config.standard_cds&var.trinket_use|config.standard_cds&(cooldown.bestial_wrath.ready|fight_remains<21)
+    - use_item,name=algethar_puzzle_box,off_gcd=true,if=!config.standard_cds&var.trinket_use|config.standard_cds&(cooldown.bestial_wrath.remains<2|fight_remains<23)
+    - use_item,name=emberwing_feather,off_gcd=true,if=!config.standard_cds&var.trinket_use|config.standard_cds&(cooldown.bestial_wrath.ready|fight_remains<16)
+    - use_item,name=voracious_heart_of_ulatek,off_gcd=true,if=!config.standard_cds&var.trinket_use|config.standard_cds&(cooldown.bestial_wrath.ready|fight_remains<21)
+    - use_item,name=sealed_chaos_urn,off_gcd=true,if=!config.standard_cds&var.trinket_use|config.standard_cds&(cooldown.bestial_wrath.ready|fight_remains<21)
+    - use_item,name=evercollapsing_void_fissure,off_gcd=true,if=!config.standard_cds&var.trinket_use|config.standard_cds&(cooldown.bestial_wrath.ready|fight_remains<11)
+    - use_item,name=rangercaptains_iridescent_insignia,off_gcd=true,if=!config.standard_cds&var.trinket_use|config.standard_cds
+    - use_item,name=void_stalkers_contract,off_gcd=true,if=!config.standard_cds&var.trinket_use|config.standard_cds
+    - use_item,name=latchs_crooked_hook,off_gcd=true,if=!config.standard_cds&var.trinket_use|config.standard_cds
+    # - trinket_1,if=trinket_1.sync
+    # - trinket_2,if=trinket_2.sync
+
+  cds:
+    - berserking,if=!config.standard_cds&var.trinket_use|config.standard_cds&(cooldown.bestial_wrath.ready|fight_remains<13)
+    - blood_fury,if=!config.standard_cds&var.trinket_use|config.standard_cds&(cooldown.bestial_wrath.ready|fight_remains<16)
+    - ancestral_call,if=!config.standard_cds&var.trinket_use|config.standard_cds&(cooldown.bestial_wrath.ready|fight_remains<16)
+    - fireblood,if=!config.standard_cds&var.trinket_use|config.standard_cds&(cooldown.bestial_wrath.ready|fight_remains<9)
+
+  st:
+    - barbed_shot,if=cooldown.bestial_wrath.remains<gcd|cooldown.barbed_shot.full_recharge_time<gcd
+    - bestial_wrath,if=!config.standard_cds&var.bw_st|config.standard_cds
+    - wild_thrash,if=enemies_around_target>1
+    # &(buff.471877.remains>4|cooldown.kill_command.charges_fractional>1.8)
+    - kill_command,if=howl_summon.ready|(cooldown.bestial_wrath.remains>cooldown.kill_command.full_recharge_time+gcd&buff.natures_ally.react)
+    - cobra_shot,if=buff.cobra_fang.stack>=4
+    - barbed_shot,if=(focus<75|cooldown.barbed_shot.full_recharge_time<gcd)&!talent.serpentine_strikes|talent.serpentine_strikes
+    - cobra_shot,if=cooldown.bestial_wrath.remains>gcd
+
+  cleave:
+    - wild_thrash,if=!config.standard_cds&(prev_gcd.1.bestial_wrath|lastcast.bestial_wrath<gcd)|config.standard_cds&talent.beast_cleave&(prev_gcd.1.bestial_wrath|!buff.beast_cleave.up)
+    - bestial_wrath,if=!config.standard_cds&var.bw_send|config.standard_cds&(buff.beast_cleave.remains|!talent.beast_cleave|!talent.wild_thrash)
+    - wild_thrash,if=!config.standard_cds&!var.bw_intend&(var.wt_setup|var.wt_far|var.wt_recover)|config.standard_cds&(talent.beast_cleave&cooldown.bestial_wrath.remains>buff.beast_cleave.remains|!talent.beast_cleave)
+    - barbed_shot,if=var.barbed_ok&(cooldown.barbed_shot.full_recharge_time<gcd|focus<35&cooldown.barbed_shot.charges_fractional>1.6)
+    - kill_command,if=var.barbed_ok&buff.natures_ally.react
+    - cobra_shot,if=var.barbed_ok&buff.cobra_fang.up&buff.beast_cleave.remains
+    - barbed_shot,if=var.barbed_ok
+    - cobra_shot,if=!var.bw_intend&(talent.beast_cleave&cooldown.wild_thrash.remains>gcd|!talent.beast_cleave)
+
+  auto_hunters_mark:
+    - hunters_mark,if=nameplates.debuff.hunters_mark.count=0&debuff.hunters_mark.down&target.health.pct>25&target.time_to_die>15&target.time_to_die<9999&(target.boss|target.classification>3|target.npcid=243208|(target.dummy&target.health.pct>90))
+
+  auto_purge_enrage:
+    - tranquilizing_shot.mouseover,range_check=mouseover,if=mouseover.enemy&(mouseover.purgeable.enrage|mouseover.purgeable.magic)
+    - tranquilizing_shot,if=target.enemy&(target.purgeable.enrage|target.purgeable.magic)
+
+  main:
+    - call_action_list,name=spell_queue
+    - call_action_list,name=sanity_checks
+    - call_action_list,name=auto_target
+
+    - revive_pet,range_check=none,if=!pet.alive&pet.exists
+
+    - 883,range_check=none,if=!pet.exists&config.call_pet_number=1
+    - 83242,range_check=none,if=!pet.exists&config.call_pet_number=2
+    - 83243,range_check=none,if=!pet.exists&config.call_pet_number=3
+    - 83244,range_check=none,if=!pet.exists&config.call_pet_number=4
+    - 83245,range_check=none,if=!pet.exists&config.call_pet_number=5
+
+    - return,if=auto_combat.player
+
+    - survival_of_the_fittest,range_check=none,if=health.pct<=config.survival_of_the_fittest_hp_pct
+
+    - mend_pet,if=pet.health.pct<=config.mend_pet_high_prio_hp_pct&pet.alive&pet.exists
+    - exhilaration,range_check=none,if=health.pct<=config.exhilaration_hp_pct
+
+    - counter_shot,if=interrupt.target.check
+    - counter_shot.mouseover,if=interrupt.mouseover.check
+    - counter_shot.focus,if=interrupt.focus.check
+    - intimidation,if=interrupt.cc.check
+    - quaking_palm,if=interrupt.cc.check
+    - haymaker,if=interrupt.cc.check
+    - war_stomp,if=interrupt.stun.aoe.check
+    - bull_rush,if=interrupt.stun.aoe.check
+    - tail_swipe,if=interrupt.stun.aoe.check
+
+    - call_action_list,name=auto_purge_enrage,if=config.auto_tranquilizing_shot
+    - call_action_list,name=auto_heal
+    - call_action_list,name=auto_hunters_mark,if=config.auto_hunters_mark
+    - return,if=auto_combat.target
+    - call_action_list,name=trinkets
+    - call_action_list,name=cds
+    - call_action_list,name=st,if=enemies_around_target<2|!talent.beast_cleave&enemies_around_target<3
+    - call_action_list,name=cleave,if=enemies_around_target>2|talent.beast_cleave&enemies_around_target>1
+
+    - mend_pet,if=pet.health.pct<=config.mend_pet_low_prio_hp_pct&pet.alive&pet.exists
